@@ -235,242 +235,293 @@ function drawFarm(canvas, score, firstTxDate) {
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
   const H = canvas.height;
+  const groundY = H * 0.55; // Lower ground a bit for big buildings
 
   ctx.clearRect(0, 0, W, H);
 
-  // Sky gradient
-  const sky = ctx.createLinearGradient(0, 0, 0, H * 0.55);
-  sky.addColorStop(0, "#0d1b3e");
-  sky.addColorStop(1, "#1a3a5c");
-  ctx.fillStyle = sky;
-  ctx.fillRect(0, 0, W, H * 0.55);
-
-  // Stars (more stars for higher score)
-  const starCount = 8 + Math.floor(score / 5);
-  for (let i = 0; i < starCount; i++) {
-    const sx = Math.abs(Math.sin(i * 12.3)) * 0.9 + 0.05;
-    const sy = Math.abs(Math.cos(i * 45.6)) * 0.4 + 0.05;
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.beginPath();
-    ctx.arc(W * sx, H * sy, 1.2 + (score > 80 ? Math.random() * 0.8 : 0), 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // Moon
-  ctx.fillStyle = "#ffeaa0";
-  ctx.beginPath();
-  ctx.arc(W * 0.82, H * 0.12, 14, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = "#1a3a5c";
-  ctx.beginPath();
-  ctx.arc(W * 0.85, H * 0.1, 11, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Ground
-  const ground = ctx.createLinearGradient(0, H * 0.5, 0, H);
-  ground.addColorStop(0, "#2d4a1e");
-  ground.addColorStop(0.3, "#3d6228");
-  ground.addColorStop(1, "#1a2e0f");
-  ctx.fillStyle = ground;
-  ctx.fillRect(0, H * 0.5, W, H * 0.5);
-
-  // Path
-  ctx.fillStyle = score > 50 ? "#a67b45" : "#8b6914"; // lighter path for higher score
-  ctx.beginPath();
-  ctx.moveTo(W * 0.42 - (score > 60 ? 10 : 0), H * 0.5);
-  ctx.lineTo(W * 0.58 + (score > 60 ? 10 : 0), H * 0.5);
-  ctx.lineTo(W * 0.65 + (score > 40 ? 15 : 0), H);
-  ctx.lineTo(W * 0.35 - (score > 40 ? 15 : 0), H);
-  ctx.fill();
-
-  // ── Buildings based on score ──
-  function drawHouse(x, y, w, h, color, roofColor) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x - w/2, y - h, w, h);
-    ctx.fillStyle = roofColor;
-    ctx.beginPath();
-    ctx.moveTo(x - w/2 - 4, y - h);
-    ctx.lineTo(x, y - h - h * 0.55);
-    ctx.lineTo(x + w/2 + 4, y - h);
-    ctx.closePath();
-    ctx.fill();
-    // Door
-    ctx.fillStyle = "#4a2800";
-    ctx.fillRect(x - 5, y - 16, 10, 16);
-    // Window
-    ctx.fillStyle = "#ffe066";
-    ctx.fillRect(x - w/2 + 6, y - h + 8, 10, 8);
-    ctx.fillRect(x + w/2 - 16, y - h + 8, 10, 8);
-  }
-  
-  function drawMansion(x, y) {
-    drawHouse(x, y, 70, 50, "#d1b490", "#7a3c10");
-    // Extra wings
-    drawHouse(x - 45, y, 30, 35, "#b5956c", "#632d09");
-    drawHouse(x + 45, y, 30, 35, "#b5956c", "#632d09");
-    // Chimney
-    ctx.fillStyle = "#7a3c10";
-    ctx.fillRect(x + 20, y - 75, 8, 20);
-  }
-
-  function drawTree(x, y, size) {
-    ctx.fillStyle = "#5c3d11";
-    ctx.fillRect(x - size*0.08, y - size * 0.3, size*0.16, size * 0.35);
-    ctx.fillStyle = "#2d7a3a";
-    ctx.beginPath();
-    ctx.arc(x, y - size * 0.5, size * 0.38, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#3d9a4a";
-    ctx.beginPath();
-    ctx.arc(x - size * 0.15, y - size * 0.6, size * 0.25, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  function drawCrop(x, y, probability) {
-    const isGrown = Math.random() < probability;
-    ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x, y - (isGrown ? 18 : 10));
-    ctx.stroke();
-    if (isGrown) {
-      ctx.fillStyle = "#ffd700";
-      ctx.beginPath();
-      ctx.arc(x, y - 16, 3, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  function drawSilo(x, y) {
-    ctx.fillStyle = "#8b7355";
-    ctx.fillRect(x - 12, y - 50, 24, 50);
-    ctx.fillStyle = "#a0522d";
-    ctx.beginPath();
-    ctx.arc(x, y - 50, 12, Math.PI, 2 * Math.PI);
-    ctx.fill();
-  }
-
-  function drawWell(x, y) {
-    ctx.fillStyle = "#6b4c2a";
-    ctx.fillRect(x - 10, y - 14, 20, 14);
-    ctx.strokeStyle = "#4a3320";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(x - 10, y - 14); ctx.lineTo(x - 12, y - 22);
-    ctx.moveTo(x + 10, y - 14); ctx.lineTo(x + 12, y - 22);
-    ctx.moveTo(x - 12, y - 22); ctx.lineTo(x + 12, y - 22);
-    ctx.stroke();
-    ctx.fillStyle = "#223399";
-    ctx.beginPath();
-    ctx.ellipse(x, y - 2, 8, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  const groundY = H * 0.5;
-
-  // Base trees scale continuously
-  const treeBaseSize = 15 + (score * 0.25);
-  drawTree(W * 0.12, groundY + 2, treeBaseSize);
-  drawTree(W * 0.88, groundY + 2, Math.max(10, treeBaseSize - 4));
-  
-  if (score > 10) drawTree(W * 0.75, groundY + 2, 10 + score * 0.2);
-  if (score > 60) drawTree(W * 0.62, groundY + 2, 10 + score * 0.15);
-
-  // House
-  if (score <= 10) {
-    // Small shack/tent
-    drawHouse(W * 0.5, groundY + 1, 30, 25, "#8b6914", "#5c3d11");
-  } else if (score <= 30) {
-    drawHouse(W * 0.5, groundY + 1, 40, 30, "#a0522d", "#6b3410");
-  } else if (score <= 80) {
-    drawHouse(W * 0.5, groundY + 1, 52, 42, "#c4845a", "#8b4513");
-  } else {
-    drawMansion(W * 0.5, groundY + 1);
-  }
-
-  // Crops (Density based on score)
-  const cropCount = Math.min(24, Math.floor(score / 4));
-  const grownProbability = Math.min(1.0, score / 60);
-  // Fixed seed for consistent crops per render frame, avoiding flickering
+  // Helper for consistent pseudo-randomness
   const pseudoRandom = (seed) => {
     let x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
   };
-  
-  for (let i = 0; i < cropCount; i++) {
-    const isGrown = pseudoRandom(i * 100) < grownProbability;
+
+  // 1. Sky & Environment
+  if (score < 20) {
+    // Dark night sky (Empty lot)
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, "#050a14");
+    sky.addColorStop(1, "#0a1428");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
+  } else if (score < 40) {
+    // Starry night
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, "#08122c");
+    sky.addColorStop(1, "#11224a");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
+    for(let i=0; i<20; i++) {
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), 1, 0, Math.PI*2); ctx.fill();
+    }
+  } else if (score < 60) {
+    // Milky way
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, "#10204d");
+    sky.addColorStop(1, "#1c3870");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
+    for(let i=0; i<40; i++) {
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), pseudoRandom(i+200)*1.5, 0, Math.PI*2); ctx.fill();
+    }
+  } else if (score < 90) {
+    // Bright stars and aurora hint
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, "#16285c");
+    sky.addColorStop(1, "#264a8f");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
+    // Aurora
+    ctx.fillStyle = "rgba(79, 195, 247, 0.15)";
+    ctx.beginPath(); ctx.ellipse(W*0.5, groundY*0.5, W*0.8, groundY*0.4, 0, 0, Math.PI*2); ctx.fill();
+    for(let i=0; i<60; i++) {
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), pseudoRandom(i+200)*2, 0, Math.PI*2); ctx.fill();
+    }
+  } else {
+    // Dawn / Strong Aurora (Legendary)
+    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+    sky.addColorStop(0, "#2b1055");
+    sky.addColorStop(0.4, "#5065a3");
+    sky.addColorStop(1, "#ffcc77");
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, groundY);
     
-    // Left side crops
-    if (i % 2 === 0) {
-      const x = W * 0.12 + (i/2) * 12;
-      ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, groundY + 20); ctx.lineTo(x, groundY + 20 - (isGrown ? 18 : 10)); ctx.stroke();
-      if (isGrown) {
-        ctx.fillStyle = "#ffd700";
-        ctx.beginPath(); ctx.arc(x, groundY + 20 - 16, 3, 0, Math.PI * 2); ctx.fill();
-      }
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.beginPath(); ctx.arc(W*0.5, groundY, W*0.5, Math.PI, 0); ctx.fill(); // Sunrise glow
+  }
+
+  // Moon
+  if (score < 90) {
+    ctx.fillStyle = "#ffeaa0";
+    ctx.beginPath(); ctx.arc(W * 0.85, groundY * 0.3, 18, 0, Math.PI * 2); ctx.fill();
+    if (score < 60) {
+      // Crescent
+      ctx.fillStyle = score < 20 ? "#050a14" : (score < 40 ? "#08122c" : "#10204d");
+      ctx.beginPath(); ctx.arc(W * 0.88, groundY * 0.27, 16, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // 2. Ground & Path
+  let groundColors, pathColor, pathWidth;
+  if (score < 20) {
+    groundColors = ["#1a2412", "#131a0d"];
+    pathColor = "#3a2d18"; pathWidth = 0.08;
+  } else if (score < 40) {
+    groundColors = ["#263a18", "#1c2b12"];
+    pathColor = "#5e4827"; pathWidth = 0.12;
+  } else if (score < 60) {
+    groundColors = ["#335220", "#223815"];
+    pathColor = "#8c6b38"; pathWidth = 0.18;
+  } else if (score < 90) {
+    groundColors = ["#436e28", "#2c4a19"];
+    pathColor = "#b88f4b"; pathWidth = 0.25;
+  } else {
+    groundColors = ["#5cb32e", "#3a7a18"];
+    pathColor = "#e8b85f"; pathWidth = 0.35;
+  }
+
+  const groundGrad = ctx.createLinearGradient(0, groundY, 0, H);
+  groundGrad.addColorStop(0, groundColors[0]);
+  groundGrad.addColorStop(1, groundColors[1]);
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, W, H - groundY);
+
+  // Path
+  ctx.fillStyle = pathColor;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.5 - W * pathWidth * 0.2, groundY);
+  ctx.lineTo(W * 0.5 + W * pathWidth * 0.2, groundY);
+  ctx.lineTo(W * 0.5 + W * pathWidth, H);
+  ctx.lineTo(W * 0.5 - W * pathWidth, H);
+  ctx.fill();
+
+  // ── Helpers ──
+  function drawHouse(x, y, w, h, bodyCol, roofCol) {
+    ctx.fillStyle = bodyCol; ctx.fillRect(x - w/2, y - h, w, h);
+    ctx.fillStyle = roofCol;
+    ctx.beginPath(); ctx.moveTo(x - w/2 - w*0.1, y - h); ctx.lineTo(x, y - h - h*0.6); ctx.lineTo(x + w/2 + w*0.1, y - h); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#331100"; ctx.fillRect(x - w*0.15, y - h*0.4, w*0.3, h*0.4);
+    ctx.fillStyle = score >= 40 ? "#ffe066" : "#444"; 
+    ctx.fillRect(x - w*0.35, y - h*0.6, w*0.2, h*0.2);
+    ctx.fillRect(x + w*0.15, y - h*0.6, w*0.2, h*0.2);
+  }
+
+  function drawMansion(x, y) {
+    const w = 140, h = 80;
+    // Main body
+    ctx.fillStyle = "#e0cba8"; ctx.fillRect(x - w/2, y - h, w, h);
+    // Roofs
+    ctx.fillStyle = "#8a3a19";
+    ctx.beginPath(); ctx.moveTo(x - w/2 - 10, y - h); ctx.lineTo(x, y - h - 45); ctx.lineTo(x + w/2 + 10, y - h); ctx.closePath(); ctx.fill();
+    // Towers
+    ctx.fillStyle = "#d1b58a"; ctx.fillRect(x - w/2 - 20, y - h - 20, 25, h + 20);
+    ctx.fillRect(x + w/2 - 5, y - h - 20, 25, h + 20);
+    ctx.fillStyle = "#702c11";
+    ctx.beginPath(); ctx.moveTo(x - w/2 - 25, y - h - 20); ctx.lineTo(x - w/2 - 7, y - h - 65); ctx.lineTo(x - w/2 + 10, y - h - 20); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x + w/2 - 10, y - h - 20); ctx.lineTo(x + w/2 + 7, y - h - 65); ctx.lineTo(x + w/2 + 25, y - h - 20); ctx.fill();
+    // Door & Windows
+    ctx.fillStyle = "#331100"; ctx.fillRect(x - 15, y - 30, 30, 30);
+    ctx.fillStyle = "#ffe066";
+    ctx.fillRect(x - 50, y - 55, 25, 25); ctx.fillRect(x + 25, y - 55, 25, 25);
+    ctx.fillRect(x - 10, y - h - 25, 20, 20);
+    // Aura behind mansion
+    const aura = ctx.createRadialGradient(x, y - h/2, 10, x, y - h/2, 180);
+    aura.addColorStop(0, "rgba(255, 215, 0, 0.4)");
+    aura.addColorStop(1, "transparent");
+    ctx.fillStyle = aura;
+    ctx.beginPath(); ctx.arc(x, y - h/2, 180, 0, Math.PI*2); ctx.fill();
+  }
+
+  function drawTree(x, y, scale) {
+    ctx.fillStyle = score < 20 ? "#332211" : "#5c3d11";
+    ctx.fillRect(x - 4*scale, y - 20*scale, 8*scale, 20*scale); // Trunk
+    if (score >= 20) {
+      ctx.fillStyle = score >= 90 ? "#4ade59" : (score >= 60 ? "#2d7a3a" : "#24572c");
+      ctx.beginPath(); ctx.arc(x, y - 25*scale, 18*scale, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x - 10*scale, y - 35*scale, 15*scale, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 10*scale, y - 32*scale, 14*scale, 0, Math.PI*2); ctx.fill();
     } else {
-      // Right side crops
-      const x = W * 0.74 + ((i-1)/2) * 12;
-      ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, groundY + 20); ctx.lineTo(x, groundY + 20 - (isGrown ? 18 : 10)); ctx.stroke();
-      if (isGrown) {
-        ctx.fillStyle = "#ffd700";
-        ctx.beginPath(); ctx.arc(x, groundY + 20 - 16, 3, 0, Math.PI * 2); ctx.fill();
-      }
+      ctx.strokeStyle = "#332211"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y-15*scale); ctx.lineTo(x-10*scale, y-25*scale); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y-18*scale); ctx.lineTo(x+8*scale, y-28*scale); ctx.stroke();
     }
   }
 
-  // Equipment
-  if (score >= 40) drawWell(W * 0.35, groundY);
-  if (score >= 60) drawSilo(W * 0.78, groundY);
-  if (score >= 70) drawHouse(W * 0.18, groundY + 1, 40, 34, "#8b4513", "#6b3410"); // Barn
-
-  // Flowers
-  if (score > 30) {
-    const flowerCount = Math.floor((score - 30) / 2);
-    for (let i = 0; i < flowerCount; i++) {
-      ctx.fillStyle = i % 2 === 0 ? "#ff88dd" : "#ffffff";
-      const fx = W * 0.35 + Math.sin(i * 11) * 30;
-      const fy = groundY + 15 + Math.cos(i * 13) * 15;
-      ctx.beginPath();
-      ctx.arc(fx, fy, 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  if (score >= 90) {
-    // Golden Statue / Monument
-    ctx.fillStyle = "#ffd700";
-    ctx.fillRect(W * 0.88 - 6, groundY - 50, 12, 50);
+  function drawField(xCenter, yTop, width, rows, cropDensity, isGlowing) {
+    ctx.fillStyle = score < 20 ? "#24180d" : (score < 60 ? "#4a3219" : "#634322");
     ctx.beginPath();
-    ctx.arc(W * 0.88, groundY - 50, 10, 0, Math.PI * 2);
+    ctx.moveTo(xCenter - width*0.3, yTop);
+    ctx.lineTo(xCenter + width*0.3, yTop);
+    ctx.lineTo(xCenter + width*0.6, yTop + rows*12);
+    ctx.lineTo(xCenter - width*0.6, yTop + rows*12);
     ctx.fill();
+
+    for (let r = 0; r < rows; r++) {
+      const rowY = yTop + r * 12 + 8;
+      const rowWidth = width * 0.3 + (width * 0.3 * (r / rows));
+      for (let c = 0; c < 10; c++) {
+        if (pseudoRandom(r*10+c) > cropDensity) continue;
+        const cx = xCenter - rowWidth + (rowWidth * 2 * c / 9);
+        
+        ctx.strokeStyle = score < 20 ? "#4a3219" : "#4fc87a";
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(cx, rowY); ctx.lineTo(cx, rowY - 8); ctx.stroke();
+        
+        if (score >= 40 && pseudoRandom(r*10+c+100) < 0.6) {
+          ctx.fillStyle = isGlowing ? "#ffea00" : (score >= 60 ? "#ff5555" : "#ffaa00");
+          if (isGlowing) {
+            ctx.shadowColor = "#ffea00"; ctx.shadowBlur = 6;
+          }
+          ctx.beginPath(); ctx.arc(cx, rowY - 10, 3.5, 0, Math.PI*2); ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+    }
   }
 
-  // Fence (Density / quality improves)
-  ctx.strokeStyle = score > 50 ? "#eeeeee" : "#7a5c2a"; // White picket fence for high score
-  ctx.lineWidth = score > 50 ? 3 : 2;
-  const fenceSpacing = score > 30 ? 18 : 25;
-  for (let i = 0; i < Math.floor(W / fenceSpacing); i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * fenceSpacing + 5, groundY - 2);
-    ctx.lineTo(i * fenceSpacing + 5, groundY + 12);
-    ctx.stroke();
-    if (i > 0) {
-      ctx.beginPath();
-      ctx.moveTo((i - 1) * fenceSpacing + 5, groundY + 3);
-      ctx.lineTo(i * fenceSpacing + 5, groundY + 3);
-      ctx.stroke();
-      if (score > 10) {
-        ctx.beginPath();
-        ctx.moveTo((i - 1) * fenceSpacing + 5, groundY + 8);
-        ctx.lineTo(i * fenceSpacing + 5, groundY + 8);
-        ctx.stroke();
+  function drawWindmill(x, y) {
+    ctx.fillStyle = "#d1d1d1"; ctx.fillRect(x - 20, y - 80, 40, 80);
+    ctx.fillStyle = "#a83232"; 
+    ctx.beginPath(); ctx.moveTo(x-25, y-80); ctx.lineTo(x, y-110); ctx.lineTo(x+25, y-80); ctx.fill();
+    // Blades
+    const time = Date.now() / 1500;
+    ctx.save();
+    ctx.translate(x, y-80);
+    ctx.rotate(time);
+    ctx.fillStyle = "#f0f0f0";
+    ctx.fillRect(-6, -55, 12, 110);
+    ctx.fillRect(-55, -6, 110, 12);
+    ctx.restore();
+  }
+
+  // 3. Render Items by Phase
+  if (score < 20) {
+    // Phase 1
+    drawTree(W * 0.15, groundY + 20, 1);
+    drawTree(W * 0.85, groundY + 10, 0.8);
+    drawHouse(W * 0.5, groundY + 5, 30, 25, "#30261c", "#1c150e");
+    drawField(W * 0.25, groundY + 30, 50, 2, 0.2, false);
+  } else if (score < 40) {
+    // Phase 2
+    drawTree(W * 0.15, groundY + 20, 1.4);
+    drawTree(W * 0.85, groundY + 10, 1.2);
+    drawHouse(W * 0.5, groundY + 5, 50, 40, "#80583b", "#4a301e");
+    drawField(W * 0.25, groundY + 20, 70, 4, 0.6, false);
+    drawField(W * 0.75, groundY + 30, 60, 3, 0.4, false);
+  } else if (score < 60) {
+    // Phase 3
+    drawTree(W * 0.12, groundY + 15, 1.8);
+    drawTree(W * 0.88, groundY + 10, 1.5);
+    drawTree(W * 0.7, groundY - 5, 1.1);
+    drawHouse(W * 0.5, groundY + 5, 75, 60, "#bd865e", "#7a3111");
+    // Well
+    ctx.fillStyle="#666"; ctx.fillRect(W*0.32 - 12, groundY+10 - 12, 24, 12);
+    ctx.fillStyle="#888"; ctx.fillRect(W*0.32 - 14, groundY+10 - 2, 28, 4);
+    
+    drawField(W * 0.20, groundY + 30, 100, 6, 0.8, false);
+    drawField(W * 0.80, groundY + 40, 90, 5, 0.7, false);
+  } else if (score < 90) {
+    // Phase 4
+    drawTree(W * 0.1, groundY + 10, 2.2);
+    drawTree(W * 0.9, groundY + 15, 2.0);
+    drawTree(W * 0.25, groundY - 5, 1.4);
+    drawHouse(W * 0.55, groundY + 5, 95, 75, "#d1b490", "#8a3a19");
+    drawHouse(W * 0.35, groundY + 15, 60, 50, "#a65233", "#5c2510"); // Barn
+    drawField(W * 0.18, groundY + 40, 130, 7, 1.0, true);
+    drawField(W * 0.82, groundY + 50, 140, 7, 0.9, true);
+  } else {
+    // Phase 5
+    drawTree(W * 0.08, groundY + 20, 2.8);
+    drawTree(W * 0.92, groundY + 30, 2.8);
+    drawTree(W * 0.2, groundY, 1.8);
+    drawTree(W * 0.8, groundY, 1.8);
+    
+    drawWindmill(W * 0.22, groundY - 5);
+    drawMansion(W * 0.5, groundY + 10);
+    drawField(W * 0.15, groundY + 50, 160, 9, 1.0, true);
+    drawField(W * 0.85, groundY + 60, 180, 9, 1.0, true);
+  }
+
+  // 4. Foreground Fence & Particles
+  ctx.strokeStyle = score < 20 ? "#221100" : (score < 60 ? "#5c3d11" : "#e0e0e0");
+  ctx.lineWidth = score >= 60 ? 4 : 3;
+  const fSpace = score >= 60 ? 18 : 28;
+  for(let i=0; i<W/fSpace; i++) {
+    if (score < 20 && pseudoRandom(i) < 0.4) continue;
+    const fx = i * fSpace + 5;
+    ctx.beginPath(); ctx.moveTo(fx, H - 25); ctx.lineTo(fx, H - 5); ctx.stroke();
+    if (i > 0 && !(score < 20 && pseudoRandom(i+10) < 0.3)) {
+      ctx.beginPath(); ctx.moveTo(fx - fSpace, H - 18); ctx.lineTo(fx, H - 18); ctx.stroke();
+      if (score >= 40) {
+        ctx.beginPath(); ctx.moveTo(fx - fSpace, H - 10); ctx.lineTo(fx, H - 10); ctx.stroke();
       }
+    }
+  }
+
+  // Magic Particles for Score >= 60
+  if (score >= 60) {
+    const pCount = score >= 90 ? 50 : 20;
+    const time = Date.now() / 1500;
+    for(let i=0; i<pCount; i++) {
+      const px = W * pseudoRandom(i);
+      const pyBase = H - (H * 0.45 * pseudoRandom(i+100));
+      const py = pyBase - (time * 30 * pseudoRandom(i+200)) % (H*0.45);
+      ctx.fillStyle = score >= 90 ? "rgba(255, 230, 100, 0.9)" : "rgba(100, 255, 200, 0.7)";
+      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
+      ctx.beginPath(); ctx.arc(px, py, 1.5 + pseudoRandom(i+300)*2, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
     }
   }
 }
@@ -690,11 +741,17 @@ function SpiritCanvas({ spiritState, todayTxCount }) {
 
 function FarmCanvas({ growthScore, firstTxDate }) {
   const canvasRef = useRef(null);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    if (canvasRef.current) {
-      drawFarm(canvasRef.current, growthScore, firstTxDate);
-    }
+    const animate = () => {
+      if (canvasRef.current) {
+        drawFarm(canvasRef.current, growthScore, firstTxDate);
+      }
+      animRef.current = requestAnimationFrame(animate);
+    };
+    animRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animRef.current);
   }, [growthScore, firstTxDate]);
 
   return (
