@@ -24,9 +24,9 @@ const FARM_TITLES = [
   { min: 0,   max: 10,  icon: "🌱", title: "産声を上げたばかりの新芽",   desc: "Base上での旅が始まったばかりです。" },
   { min: 11,  max: 30,  icon: "🌿", title: "芽吹いた希望の農地",          desc: "少しずつ根を張り始めています。" },
   { min: 31,  max: 60,  icon: "🌻", title: "成長中の活気ある開拓地",      desc: "日に日に勢力を広げています。" },
-  { min: 61,  max: 100, icon: "🏡", title: "確かな実績を持つ農場",        desc: "Base上に確かな足跡を残しています。" },
-  { min: 101, max: 200, icon: "🏰", title: "古参の豊かな大農場",           desc: "長きにわたりBaseを開拓してきた証です。" },
-  { min: 201, max: Infinity, icon: "👑", title: "伝説の農場主", desc: "Base上でもっとも深い足跡を刻む者。" },
+  { min: 61,  max: 80,  icon: "🏡", title: "確かな実績を持つ農場",        desc: "Base上に確かな足跡を残しています。" },
+  { min: 81,  max: 95,  icon: "🏰", title: "古参の豊かな大農場",           desc: "長きにわたりBaseを開拓してきた証です。" },
+  { min: 96,  max: Infinity, icon: "👑", title: "伝説の農場主", desc: "Base上でもっとも深い足跡を刻む者。" },
 ];
 
 const SPIRIT_STATES = [
@@ -97,8 +97,39 @@ function getSpiritState(todayCount) {
   return SPIRIT_STATES.find((s) => todayCount >= s.min && todayCount <= s.max) || SPIRIT_STATES[0];
 }
 
-function getFarmTitle(level) {
-  return FARM_TITLES.find((t) => level >= t.min && level <= t.max) || FARM_TITLES[0];
+function getFarmTitle(score) {
+  return FARM_TITLES.find((t) => score >= t.min && score <= t.max) || FARM_TITLES[0];
+}
+
+function calculateGrowthScore(txs, uniqueTokenCount, totalGasUsd) {
+  const now = Math.floor(Date.now() / 1000);
+  const thirtyDaysAgo = now - 30 * 86400;
+  
+  const recentTxs = txs.filter((tx) => parseInt(tx.timeStamp) >= thirtyDaysAgo);
+  
+  // 1. Active days
+  const activeDaysSet = new Set();
+  recentTxs.forEach(tx => {
+    const date = new Date(parseInt(tx.timeStamp) * 1000).toDateString();
+    activeDaysSet.add(date);
+  });
+  const activeDaysScore = Math.min(30, (activeDaysSet.size / 20) * 30);
+  
+  // 2. Tx count
+  const txScore = Math.min(30, (recentTxs.length / 100) * 30);
+  
+  // 3. Unique contracts (DApps)
+  const uniqueContracts = getUniqueContracts(recentTxs);
+  const contractsScore = Math.min(20, (uniqueContracts / 10) * 20);
+  
+  // 4. Tokens
+  const tokensScore = Math.min(10, (uniqueTokenCount / 5) * 10);
+  
+  // 5. Gas usage
+  const gasScore = Math.min(10, (parseFloat(totalGasUsd) / 10) * 10);
+  
+  const totalScore = activeDaysScore + txScore + contractsScore + tokensScore + gasScore;
+  return Math.floor(totalScore);
 }
 
 // ─── Canvas Drawings ────────────────────────────────────────
@@ -199,7 +230,7 @@ function drawSpirit(canvas, spiritState, activityLevel) {
   ctx.fill();
 }
 
-function drawFarm(canvas, level, firstTxDate) {
+function drawFarm(canvas, score, firstTxDate) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
@@ -214,14 +245,16 @@ function drawFarm(canvas, level, firstTxDate) {
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H * 0.55);
 
-  // Stars
-  const stars = [[0.1,0.1],[0.3,0.05],[0.5,0.15],[0.7,0.08],[0.9,0.2],[0.2,0.25],[0.6,0.3],[0.85,0.1]];
-  stars.forEach(([sx, sy]) => {
+  // Stars (more stars for higher score)
+  const starCount = 8 + Math.floor(score / 5);
+  for (let i = 0; i < starCount; i++) {
+    const sx = Math.abs(Math.sin(i * 12.3)) * 0.9 + 0.05;
+    const sy = Math.abs(Math.cos(i * 45.6)) * 0.4 + 0.05;
     ctx.fillStyle = "rgba(255,255,255,0.7)";
     ctx.beginPath();
-    ctx.arc(W * sx, H * sy, 1.2, 0, Math.PI * 2);
+    ctx.arc(W * sx, H * sy, 1.2 + (score > 80 ? Math.random() * 0.8 : 0), 0, Math.PI * 2);
     ctx.fill();
-  });
+  }
 
   // Moon
   ctx.fillStyle = "#ffeaa0";
@@ -242,15 +275,15 @@ function drawFarm(canvas, level, firstTxDate) {
   ctx.fillRect(0, H * 0.5, W, H * 0.5);
 
   // Path
-  ctx.fillStyle = "#8b6914";
+  ctx.fillStyle = score > 50 ? "#a67b45" : "#8b6914"; // lighter path for higher score
   ctx.beginPath();
-  ctx.moveTo(W * 0.42, H * 0.5);
-  ctx.lineTo(W * 0.58, H * 0.5);
-  ctx.lineTo(W * 0.65, H);
-  ctx.lineTo(W * 0.35, H);
+  ctx.moveTo(W * 0.42 - (score > 60 ? 10 : 0), H * 0.5);
+  ctx.lineTo(W * 0.58 + (score > 60 ? 10 : 0), H * 0.5);
+  ctx.lineTo(W * 0.65 + (score > 40 ? 15 : 0), H);
+  ctx.lineTo(W * 0.35 - (score > 40 ? 15 : 0), H);
   ctx.fill();
 
-  // ── Buildings based on level ──
+  // ── Buildings based on score ──
   function drawHouse(x, y, w, h, color, roofColor) {
     ctx.fillStyle = color;
     ctx.fillRect(x - w/2, y - h, w, h);
@@ -269,10 +302,20 @@ function drawFarm(canvas, level, firstTxDate) {
     ctx.fillRect(x - w/2 + 6, y - h + 8, 10, 8);
     ctx.fillRect(x + w/2 - 16, y - h + 8, 10, 8);
   }
+  
+  function drawMansion(x, y) {
+    drawHouse(x, y, 70, 50, "#d1b490", "#7a3c10");
+    // Extra wings
+    drawHouse(x - 45, y, 30, 35, "#b5956c", "#632d09");
+    drawHouse(x + 45, y, 30, 35, "#b5956c", "#632d09");
+    // Chimney
+    ctx.fillStyle = "#7a3c10";
+    ctx.fillRect(x + 20, y - 75, 8, 20);
+  }
 
   function drawTree(x, y, size) {
     ctx.fillStyle = "#5c3d11";
-    ctx.fillRect(x - 3, y - size * 0.3, 6, size * 0.35);
+    ctx.fillRect(x - size*0.08, y - size * 0.3, size*0.16, size * 0.35);
     ctx.fillStyle = "#2d7a3a";
     ctx.beginPath();
     ctx.arc(x, y - size * 0.5, size * 0.38, 0, Math.PI * 2);
@@ -283,17 +326,18 @@ function drawFarm(canvas, level, firstTxDate) {
     ctx.fill();
   }
 
-  function drawCrop(x, y, grown) {
-    ctx.strokeStyle = grown ? "#4fc87a" : "#8b6914";
+  function drawCrop(x, y, probability) {
+    const isGrown = Math.random() < probability;
+    ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(x, y);
-    ctx.lineTo(x, y - (grown ? 18 : 10));
+    ctx.lineTo(x, y - (isGrown ? 18 : 10));
     ctx.stroke();
-    if (grown) {
+    if (isGrown) {
       ctx.fillStyle = "#ffd700";
       ctx.beginPath();
-      ctx.arc(x, y - 20, 4, 0, Math.PI * 2);
+      ctx.arc(x, y - 16, 3, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -325,78 +369,108 @@ function drawFarm(canvas, level, firstTxDate) {
 
   const groundY = H * 0.5;
 
-  // Level 1+: Basic house
-  drawHouse(W * 0.5, groundY + 1, 52, 42, "#c4845a", "#8b4513");
-  // Trees always
-  drawTree(W * 0.12, groundY + 2, 38);
-  drawTree(W * 0.88, groundY + 2, 34);
+  // Base trees scale continuously
+  const treeBaseSize = 15 + (score * 0.25);
+  drawTree(W * 0.12, groundY + 2, treeBaseSize);
+  drawTree(W * 0.88, groundY + 2, Math.max(10, treeBaseSize - 4));
+  
+  if (score > 10) drawTree(W * 0.75, groundY + 2, 10 + score * 0.2);
+  if (score > 60) drawTree(W * 0.62, groundY + 2, 10 + score * 0.15);
 
-  if (level >= 5) {
-    // Crops
-    for (let i = 0; i < Math.min(5 + Math.floor(level/10), 12); i++) {
-      drawCrop(W * 0.12 + i * 18, groundY + 20, i < Math.floor(level / 15));
-    }
-  }
-  if (level >= 10) {
-    // Barn
-    drawHouse(W * 0.18, groundY + 1, 40, 34, "#8b4513", "#6b3410");
-    // Second tree
-    drawTree(W * 0.75, groundY + 2, 30);
-  }
-  if (level >= 20) {
-    // Well
-    drawWell(W * 0.35, groundY);
-  }
-  if (level >= 30) {
-    // Silo
-    drawSilo(W * 0.78, groundY);
-  }
-  if (level >= 50) {
-    // Second house
-    drawHouse(W * 0.78, groundY + 1, 44, 36, "#c49a6c", "#7a3c10");
-  }
-  if (level >= 75) {
-    drawTree(W * 0.62, groundY + 2, 28);
-    for (let i = 0; i < 6; i++) {
-      drawCrop(W * 0.74 + i * 14, groundY + 20, true);
-    }
-  }
-  if (level >= 100) {
-    // Tower / landmark
-    ctx.fillStyle = "#5566bb";
-    ctx.fillRect(W * 0.88 - 8, groundY - 55, 16, 56);
-    ctx.fillStyle = "#3355aa";
-    ctx.beginPath();
-    ctx.moveTo(W * 0.88 - 12, groundY - 55);
-    ctx.lineTo(W * 0.88, groundY - 70);
-    ctx.lineTo(W * 0.88 + 12, groundY - 55);
-    ctx.fill();
-    // Flag
-    ctx.fillStyle = "#0052ff";
-    ctx.beginPath();
-    ctx.moveTo(W * 0.88, groundY - 70);
-    ctx.lineTo(W * 0.88 + 14, groundY - 63);
-    ctx.lineTo(W * 0.88, groundY - 56);
-    ctx.fill();
+  // House
+  if (score <= 10) {
+    // Small shack/tent
+    drawHouse(W * 0.5, groundY + 1, 30, 25, "#8b6914", "#5c3d11");
+  } else if (score <= 30) {
+    drawHouse(W * 0.5, groundY + 1, 40, 30, "#a0522d", "#6b3410");
+  } else if (score <= 80) {
+    drawHouse(W * 0.5, groundY + 1, 52, 42, "#c4845a", "#8b4513");
+  } else {
+    drawMansion(W * 0.5, groundY + 1);
   }
 
-  // Fence
-  ctx.strokeStyle = "#7a5c2a";
-  ctx.lineWidth = 2;
-  for (let i = 0; i < Math.floor(W / 22); i++) {
+  // Crops (Density based on score)
+  const cropCount = Math.min(24, Math.floor(score / 4));
+  const grownProbability = Math.min(1.0, score / 60);
+  // Fixed seed for consistent crops per render frame, avoiding flickering
+  const pseudoRandom = (seed) => {
+    let x = Math.sin(seed++) * 10000;
+    return x - Math.floor(x);
+  };
+  
+  for (let i = 0; i < cropCount; i++) {
+    const isGrown = pseudoRandom(i * 100) < grownProbability;
+    
+    // Left side crops
+    if (i % 2 === 0) {
+      const x = W * 0.12 + (i/2) * 12;
+      ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, groundY + 20); ctx.lineTo(x, groundY + 20 - (isGrown ? 18 : 10)); ctx.stroke();
+      if (isGrown) {
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath(); ctx.arc(x, groundY + 20 - 16, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    } else {
+      // Right side crops
+      const x = W * 0.74 + ((i-1)/2) * 12;
+      ctx.strokeStyle = isGrown ? "#4fc87a" : "#8b6914";
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, groundY + 20); ctx.lineTo(x, groundY + 20 - (isGrown ? 18 : 10)); ctx.stroke();
+      if (isGrown) {
+        ctx.fillStyle = "#ffd700";
+        ctx.beginPath(); ctx.arc(x, groundY + 20 - 16, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // Equipment
+  if (score >= 40) drawWell(W * 0.35, groundY);
+  if (score >= 60) drawSilo(W * 0.78, groundY);
+  if (score >= 70) drawHouse(W * 0.18, groundY + 1, 40, 34, "#8b4513", "#6b3410"); // Barn
+
+  // Flowers
+  if (score > 30) {
+    const flowerCount = Math.floor((score - 30) / 2);
+    for (let i = 0; i < flowerCount; i++) {
+      ctx.fillStyle = i % 2 === 0 ? "#ff88dd" : "#ffffff";
+      const fx = W * 0.35 + Math.sin(i * 11) * 30;
+      const fy = groundY + 15 + Math.cos(i * 13) * 15;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  if (score >= 90) {
+    // Golden Statue / Monument
+    ctx.fillStyle = "#ffd700";
+    ctx.fillRect(W * 0.88 - 6, groundY - 50, 12, 50);
     ctx.beginPath();
-    ctx.moveTo(i * 22 + 5, groundY - 2);
-    ctx.lineTo(i * 22 + 5, groundY + 12);
+    ctx.arc(W * 0.88, groundY - 50, 10, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Fence (Density / quality improves)
+  ctx.strokeStyle = score > 50 ? "#eeeeee" : "#7a5c2a"; // White picket fence for high score
+  ctx.lineWidth = score > 50 ? 3 : 2;
+  const fenceSpacing = score > 30 ? 18 : 25;
+  for (let i = 0; i < Math.floor(W / fenceSpacing); i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * fenceSpacing + 5, groundY - 2);
+    ctx.lineTo(i * fenceSpacing + 5, groundY + 12);
     ctx.stroke();
     if (i > 0) {
       ctx.beginPath();
-      ctx.moveTo((i - 1) * 22 + 5, groundY + 3);
-      ctx.lineTo(i * 22 + 5, groundY + 3);
+      ctx.moveTo((i - 1) * fenceSpacing + 5, groundY + 3);
+      ctx.lineTo(i * fenceSpacing + 5, groundY + 3);
       ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo((i - 1) * 22 + 5, groundY + 8);
-      ctx.lineTo(i * 22 + 5, groundY + 8);
-      ctx.stroke();
+      if (score > 10) {
+        ctx.beginPath();
+        ctx.moveTo((i - 1) * fenceSpacing + 5, groundY + 8);
+        ctx.lineTo(i * fenceSpacing + 5, groundY + 8);
+        ctx.stroke();
+      }
     }
   }
 }
@@ -473,7 +547,7 @@ function generateShareCanvas(canvas, data) {
   const items = [
     { label: "開拓Lv.", value: `Lv.${data.level}` },
     { label: "本日のTx", value: `${data.todayTxCount}回` },
-    { label: "総Tx", value: `${data.totalTxCount}回` },
+    { label: "Growth Score", value: `${data.growthScore}` },
   ];
   items.forEach((item, i) => {
     const x = (W / items.length) * i + W / items.length / 2;
@@ -557,13 +631,16 @@ async function loadChainData(address, onStep) {
   const uniqueTokens = new Set(tokenTxs.map((t) => t.contractAddress));
   const firstTx = txs.length > 0 ? txs[0] : null;
   const totalTxCount = txs.length;
-  const level = Math.max(1, Math.floor(totalTxCount / 10));
   const todayTxList = getTodayTxs(txs);
   const todayTxCount = todayTxList.length;
   const todayContracts = getUniqueContracts(todayTxList);
-  const todayValue = estimateDailyValue(txs);
   const totalGas = totalGasUsd(txs);
+  const todayValue = estimateDailyValue(txs);
   const ethBalance = balData.result ? (weiToEth(balData.result)).toFixed(4) : "0.0000";
+  const uniqueTokenCount = uniqueTokens.size;
+
+  const growthScore = calculateGrowthScore(txs, uniqueTokenCount, totalGas);
+  const level = Math.max(1, Math.floor(growthScore / 10));
 
   onStep(4);
 
@@ -572,15 +649,16 @@ async function loadChainData(address, onStep) {
     txs,
     totalTxCount,
     level,
+    growthScore,
     todayTxCount,
     todayContracts,
     todayValue,
     totalGas,
     ethBalance,
-    uniqueTokenCount: uniqueTokens.size,
+    uniqueTokenCount,
     firstTxDate: firstTx ? formatDate(firstTx.timeStamp) : "不明",
     spiritState: getSpiritState(todayTxCount),
-    farmTitle: getFarmTitle(level),
+    farmTitle: getFarmTitle(growthScore),
   };
 }
 
@@ -610,14 +688,14 @@ function SpiritCanvas({ spiritState, todayTxCount }) {
   );
 }
 
-function FarmCanvas({ level, firstTxDate }) {
+function FarmCanvas({ growthScore, firstTxDate }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     if (canvasRef.current) {
-      drawFarm(canvasRef.current, level, firstTxDate);
+      drawFarm(canvasRef.current, growthScore, firstTxDate);
     }
-  }, [level, firstTxDate]);
+  }, [growthScore, firstTxDate]);
 
   return (
     <canvas
@@ -779,10 +857,10 @@ function ResultScreen({ data, onBack, onShare }) {
   const [popup, setPopup] = useState(null);
 
   const farmBuildings = [
-    { x: 0.5, y: 0.98, label: "本宅", desc: `Base農場の中心です。${data.totalTxCount}回のTxがこの農場を育てました。` },
-    { x: 0.18, y: 0.98, label: "納屋", desc: data.level >= 10 ? "2023年からの初期参入者の証です。" : "もっとTxを重ねると建設されます。", locked: data.level < 10 },
-    { x: 0.78, y: 0.98, label: "サイロ", desc: data.level >= 30 ? `${data.uniqueTokenCount}種のトークンを保有する多様な農場主です。` : "Lv.30で解放されます。", locked: data.level < 30 },
-    { x: 0.35, y: 0.98, label: "井戸", desc: data.level >= 20 ? "安定したETHバランスを維持しています。" : "Lv.20で解放されます。", locked: data.level < 20 },
+    { x: 0.5, y: 0.98, label: "本宅", desc: `Base農場の中心です。Growth Score ${data.growthScore} に応じて進化します。` },
+    { x: 0.18, y: 0.98, label: "納屋", desc: data.growthScore >= 70 ? "豊かな農場の証拠です。" : "もっと活動すると建設されます。", locked: data.growthScore < 70 },
+    { x: 0.78, y: 0.98, label: "サイロ", desc: data.growthScore >= 60 ? `${data.uniqueTokenCount}種のトークンを保有する多様な農場主です。` : "Score 60で解放されます。", locked: data.growthScore < 60 },
+    { x: 0.35, y: 0.98, label: "井戸", desc: data.growthScore >= 40 ? "安定したETHバランスを維持しています。" : "Score 40で解放されます。", locked: data.growthScore < 40 },
   ];
 
   return (
@@ -831,15 +909,16 @@ function ResultScreen({ data, onBack, onShare }) {
       {/* ── Section B: Farm ── */}
       <section className="farm-section" id="farm-section">
         <div className="section-header">
-          <div className="section-icon">🌾</div>
-          <h2>累積農場</h2>
+          <div className="section-icon">{data.farmTitle.icon}</div>
+          <h2>{data.farmTitle.title}</h2>
+          <p style={{ marginTop: "4px", fontSize: "13px", color: "var(--text-muted)" }}>{data.farmTitle.desc}</p>
         </div>
 
         <div className="farm-card">
           <div className="farm-canvas-wrapper">
-            <FarmCanvas level={data.level} firstTxDate={data.firstTxDate} />
+            <FarmCanvas growthScore={data.growthScore} firstTxDate={data.firstTxDate} />
             <div className="farm-overlay-badge">
-              <span>⚔️ Lv.{data.level}</span>
+              <span>⚔️ Growth Score: {data.growthScore} (Lv.{data.level})</span>
             </div>
 
             {/* Tap zones */}
