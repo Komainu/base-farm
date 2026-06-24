@@ -1,18 +1,18 @@
 {
   "accountAssociation": {
-    "header": "eyJmaWQiOiAxMjM0NTYsICJ0eXBlIjogImN1c3RvZHkiLCAia2V5IjogIjB4MTIzNDU2Nzg5MGFiY2RlZiJ9",
-    "payload": "eyJkb21haW4iOiAieW91ci1hcHAtbmFtZS52ZXJjZWwuYXBwIn0",
-    "signature": "MHgxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYxMjM0NTY3ODkwYWJjZGVmMTIzNDU2Nzg5MGFiY2RlZjEyMzQ1Njc4OTBhYmNkZWYxYg"
+    "header": "REPLACE_WITH_SIGNED_HEADER",
+    "payload": "REPLACE_WITH_SIGNED_PAYLOAD",
+    "signature": "REPLACE_WITH_SIGNED_SIGNATURE"
   },
   "frame": {
     "version": "1",
     "name": "BASE FARM",
-    "iconUrl": "https://base-farm.vercel.app/icon.png",
-    "homeUrl": "https://base-farm.vercel.app",
-    "imageUrl": "https://base-farm.vercel.app/og-image.png",
+    "iconUrl": "https://base-farm-ten.vercel.app/icon.png",
+    "homeUrl": "https://base-farm-ten.vercel.app",
+    "imageUrl": "https://base-farm-ten.vercel.app/og-image.png",
     "buttonTitle": "Launch App",
-    "splashImageUrl": "https://base-farm.vercel.app/splash.png",
+    "splashImageUrl": "https://base-farm-ten.vercel.app/splash.png",
     "splashBackgroundColor": "#080c18",
-    "webhookUrl": "https://base-farm.vercel.app/api/webhook"
+    "webhookUrl": "https://base-farm-ten.vercel.app/api/webhook"
   }
 }

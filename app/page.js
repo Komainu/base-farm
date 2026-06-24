@@ -36,7 +36,7 @@ const I18N = {
     btnObserve: "🌾 Trace Footprints",
     errorInput: "Please enter a valid 0x... address",
     errorFetch: "Failed to fetch data. Make sure it's a valid Base address.",
-    tickerLabel: "Recently Observed Farms",
+
     backBtn: "← Back",
     backBtnRetry: "← Back and retry",
     todayValueLabel: "Today's Est. BASE Yield",
@@ -103,7 +103,7 @@ const I18N = {
     btnObserve: "🌾 足跡を辿る",
     errorInput: "正しい0x...アドレスを入力してください",
     errorFetch: "データの取得に失敗しました。",
-    tickerLabel: "最近観測された農場",
+
     backBtn: "← 戻る",
     backBtnRetry: "← 戻って再入力する",
     todayValueLabel: "今日の推定BASE獲得期待値",
@@ -140,14 +140,7 @@ const I18N = {
   }
 };
 
-const TICKER_DEMOS = [
-  { addr: "0xd8dA6B...96045", level: 88, value: "$4.21" },
-  { addr: "0xAb5801...bA86", level: 34, value: "$1.07" },
-  { addr: "0x742d35...d4E2", level: 61, value: "$2.88" },
-  { addr: "0x1f9840...5dC2", level: 112, value: "$6.54" },
-  { addr: "0xBE0eB5...3378", level: 7, value: "$0.33" },
-  { addr: "0x47ac0F...6F82", level: 229, value: "$9.99" },
-];
+
 
 const FARM_TITLES = [
   { min: 0,   max: 10,  icon: "🌱", titleKey: "farmTitle0", descKey: "farmDesc0" },
@@ -800,7 +793,7 @@ function EntranceScreen({ onObserve, langObj }) {
     onObserve(address.trim());
   };
 
-  const tickerItems = [...TICKER_DEMOS, ...TICKER_DEMOS];
+
 
   return (
     <div className="screen entrance-screen">
@@ -852,18 +845,7 @@ function EntranceScreen({ onObserve, langObj }) {
         <button type="submit" className="observe-btn" disabled={!address.trim()}>{langObj.btnObserve}</button>
       </form>
 
-      <div className="ticker-wrapper">
-        <p className="ticker-label">{langObj.tickerLabel}</p>
-        <div className="ticker-track">
-          {tickerItems.map((item, i) => (
-            <div key={i} className="ticker-item" onClick={() => { setAddress(item.addr.replace("...", "")); setError(""); }}>
-              <div className="ticker-dot" />
-              <span className="ticker-text">{item.addr}</span>
-              <span className="ticker-value">{item.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+
     </div>
   );
 }
