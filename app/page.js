@@ -230,299 +230,396 @@ function drawSpirit(canvas, spiritState, activityLevel) {
   ctx.fill();
 }
 
-function drawFarm(canvas, score, firstTxDate) {
+function drawFarm(canvas, score) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
   const H = canvas.height;
-  const groundY = H * 0.55; // Lower ground a bit for big buildings
+  const groundY = H * 0.50;
 
   ctx.clearRect(0, 0, W, H);
 
-  // Helper for consistent pseudo-randomness
   const pseudoRandom = (seed) => {
-    let x = Math.sin(seed++) * 10000;
+    let x = Math.sin(seed + 1) * 10000;
     return x - Math.floor(x);
   };
+  const t = Date.now() / 1000;
 
-  // 1. Sky & Environment
+  // ════════════════════════════════════════════
+  // 1. SKY — dramatic per-phase
+  // ════════════════════════════════════════════
+  const sky = ctx.createLinearGradient(0, 0, 0, groundY);
   if (score < 20) {
-    // Dark night sky (Empty lot)
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, "#050a14");
-    sky.addColorStop(1, "#0a1428");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
+    sky.addColorStop(0, "#020408"); sky.addColorStop(1, "#070d1c");
   } else if (score < 40) {
-    // Starry night
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, "#08122c");
-    sky.addColorStop(1, "#11224a");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
-    for(let i=0; i<20; i++) {
-      ctx.fillStyle = "rgba(255,255,255,0.6)";
-      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), 1, 0, Math.PI*2); ctx.fill();
-    }
+    sky.addColorStop(0, "#0a1630"); sky.addColorStop(1, "#142850");
   } else if (score < 60) {
-    // Milky way
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, "#10204d");
-    sky.addColorStop(1, "#1c3870");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
-    for(let i=0; i<40; i++) {
-      ctx.fillStyle = "rgba(255,255,255,0.8)";
-      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), pseudoRandom(i+200)*1.5, 0, Math.PI*2); ctx.fill();
-    }
+    sky.addColorStop(0, "#112050"); sky.addColorStop(1, "#1e3d78");
   } else if (score < 90) {
-    // Bright stars and aurora hint
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, "#16285c");
-    sky.addColorStop(1, "#264a8f");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
-    // Aurora
-    ctx.fillStyle = "rgba(79, 195, 247, 0.15)";
-    ctx.beginPath(); ctx.ellipse(W*0.5, groundY*0.5, W*0.8, groundY*0.4, 0, 0, Math.PI*2); ctx.fill();
-    for(let i=0; i<60; i++) {
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
-      ctx.beginPath(); ctx.arc(W * pseudoRandom(i), groundY * pseudoRandom(i+100), pseudoRandom(i+200)*2, 0, Math.PI*2); ctx.fill();
-    }
+    sky.addColorStop(0, "#1a2d6a"); sky.addColorStop(1, "#2a509f");
   } else {
-    // Dawn / Strong Aurora (Legendary)
-    const sky = ctx.createLinearGradient(0, 0, 0, groundY);
-    sky.addColorStop(0, "#2b1055");
-    sky.addColorStop(0.4, "#5065a3");
-    sky.addColorStop(1, "#ffcc77");
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, groundY);
-    
-    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-    ctx.beginPath(); ctx.arc(W*0.5, groundY, W*0.5, Math.PI, 0); ctx.fill(); // Sunrise glow
+    sky.addColorStop(0, "#2b1055"); sky.addColorStop(0.35, "#4a3fa0");
+    sky.addColorStop(0.7, "#cc8844"); sky.addColorStop(1, "#ffcc77");
+  }
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, groundY);
+
+  // Stars
+  const starCount = score < 20 ? 3 : (score < 40 ? 20 : (score < 60 ? 40 : (score < 90 ? 70 : 0)));
+  for (let i = 0; i < starCount; i++) {
+    const sx = pseudoRandom(i * 7 + 1) * W;
+    const sy = pseudoRandom(i * 13 + 3) * groundY * 0.9;
+    const sr = score >= 60 ? 1.5 + pseudoRandom(i + 200) * 1.5 : 1;
+    ctx.fillStyle = `rgba(255,255,255,${0.4 + pseudoRandom(i + 50) * 0.5})`;
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Milky way band (score >= 40)
+  if (score >= 40 && score < 90) {
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    const mg = ctx.createLinearGradient(0, groundY * 0.2, W, groundY * 0.6);
+    mg.addColorStop(0, "transparent"); mg.addColorStop(0.3, "#7799ff");
+    mg.addColorStop(0.7, "#aa88ff"); mg.addColorStop(1, "transparent");
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, groundY * 0.15, W, groundY * 0.5);
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+  }
+
+  // Aurora (score >= 60)
+  if (score >= 60 && score < 90) {
+    ctx.save();
+    ctx.globalAlpha = 0.2 + Math.sin(t * 0.5) * 0.05;
+    const ag = ctx.createRadialGradient(W * 0.5, groundY * 0.3, 20, W * 0.5, groundY * 0.3, W * 0.6);
+    ag.addColorStop(0, "#4fc3f7"); ag.addColorStop(0.5, "#7b6ef6"); ag.addColorStop(1, "transparent");
+    ctx.fillStyle = ag;
+    ctx.beginPath(); ctx.ellipse(W * 0.5, groundY * 0.35, W * 0.6, groundY * 0.4, 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1.0;
+    ctx.restore();
+  }
+
+  // Sunrise glow (score >= 90)
+  if (score >= 90) {
+    const sg = ctx.createRadialGradient(W * 0.5, groundY, 10, W * 0.5, groundY, W * 0.7);
+    sg.addColorStop(0, "rgba(255,220,100,0.7)"); sg.addColorStop(0.4, "rgba(255,150,50,0.3)"); sg.addColorStop(1, "transparent");
+    ctx.fillStyle = sg;
+    ctx.beginPath(); ctx.arc(W * 0.5, groundY, W * 0.7, 0, Math.PI * 2); ctx.fill();
   }
 
   // Moon
   if (score < 90) {
     ctx.fillStyle = "#ffeaa0";
-    ctx.beginPath(); ctx.arc(W * 0.85, groundY * 0.3, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(W * 0.85, groundY * 0.25, 22, 0, Math.PI * 2); ctx.fill();
     if (score < 60) {
-      // Crescent
-      ctx.fillStyle = score < 20 ? "#050a14" : (score < 40 ? "#08122c" : "#10204d");
-      ctx.beginPath(); ctx.arc(W * 0.88, groundY * 0.27, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = score < 20 ? "#020408" : (score < 40 ? "#0a1630" : "#112050");
+      ctx.beginPath(); ctx.arc(W * 0.88, groundY * 0.22, 20, 0, Math.PI * 2); ctx.fill();
     }
   }
 
-  // 2. Ground & Path
-  let groundColors, pathColor, pathWidth;
+  // ════════════════════════════════════════════
+  // 2. GROUND & PATH
+  // ════════════════════════════════════════════
+  const gg = ctx.createLinearGradient(0, groundY, 0, H);
   if (score < 20) {
-    groundColors = ["#1a2412", "#131a0d"];
-    pathColor = "#3a2d18"; pathWidth = 0.08;
+    gg.addColorStop(0, "#151e0c"); gg.addColorStop(1, "#0d130a");
   } else if (score < 40) {
-    groundColors = ["#263a18", "#1c2b12"];
-    pathColor = "#5e4827"; pathWidth = 0.12;
+    gg.addColorStop(0, "#243618"); gg.addColorStop(1, "#172410");
   } else if (score < 60) {
-    groundColors = ["#335220", "#223815"];
-    pathColor = "#8c6b38"; pathWidth = 0.18;
+    gg.addColorStop(0, "#2e4c1e"); gg.addColorStop(1, "#1e3213");
   } else if (score < 90) {
-    groundColors = ["#436e28", "#2c4a19"];
-    pathColor = "#b88f4b"; pathWidth = 0.25;
+    gg.addColorStop(0, "#3d6625"); gg.addColorStop(1, "#264016");
   } else {
-    groundColors = ["#5cb32e", "#3a7a18"];
-    pathColor = "#e8b85f"; pathWidth = 0.35;
+    gg.addColorStop(0, "#55aa28"); gg.addColorStop(1, "#377018");
   }
-
-  const groundGrad = ctx.createLinearGradient(0, groundY, 0, H);
-  groundGrad.addColorStop(0, groundColors[0]);
-  groundGrad.addColorStop(1, groundColors[1]);
-  ctx.fillStyle = groundGrad;
+  ctx.fillStyle = gg;
   ctx.fillRect(0, groundY, W, H - groundY);
 
   // Path
-  ctx.fillStyle = pathColor;
+  const pw = score < 20 ? 0.06 : (score < 40 ? 0.10 : (score < 60 ? 0.16 : (score < 90 ? 0.22 : 0.30)));
+  const pc = score < 40 ? "#3a2d18" : (score < 60 ? "#7a5c30" : (score < 90 ? "#b08840" : "#d4a855"));
+  ctx.fillStyle = pc;
   ctx.beginPath();
-  ctx.moveTo(W * 0.5 - W * pathWidth * 0.2, groundY);
-  ctx.lineTo(W * 0.5 + W * pathWidth * 0.2, groundY);
-  ctx.lineTo(W * 0.5 + W * pathWidth, H);
-  ctx.lineTo(W * 0.5 - W * pathWidth, H);
+  ctx.moveTo(W * 0.5 - W * pw * 0.15, groundY);
+  ctx.lineTo(W * 0.5 + W * pw * 0.15, groundY);
+  ctx.lineTo(W * 0.5 + W * pw, H);
+  ctx.lineTo(W * 0.5 - W * pw, H);
   ctx.fill();
 
-  // ── Helpers ──
-  function drawHouse(x, y, w, h, bodyCol, roofCol) {
-    ctx.fillStyle = bodyCol; ctx.fillRect(x - w/2, y - h, w, h);
+  // ════════════════════════════════════════════
+  // 3. HELPERS
+  // ════════════════════════════════════════════
+  function drawHouse(x, y, w, h, bodyCol, roofCol, windowGlow) {
+    // Body
+    ctx.fillStyle = bodyCol; ctx.fillRect(x - w / 2, y - h, w, h);
+    // Roof
     ctx.fillStyle = roofCol;
-    ctx.beginPath(); ctx.moveTo(x - w/2 - w*0.1, y - h); ctx.lineTo(x, y - h - h*0.6); ctx.lineTo(x + w/2 + w*0.1, y - h); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = "#331100"; ctx.fillRect(x - w*0.15, y - h*0.4, w*0.3, h*0.4);
-    ctx.fillStyle = score >= 40 ? "#ffe066" : "#444"; 
-    ctx.fillRect(x - w*0.35, y - h*0.6, w*0.2, h*0.2);
-    ctx.fillRect(x + w*0.15, y - h*0.6, w*0.2, h*0.2);
-  }
-
-  function drawMansion(x, y) {
-    const w = 140, h = 80;
-    // Main body
-    ctx.fillStyle = "#e0cba8"; ctx.fillRect(x - w/2, y - h, w, h);
-    // Roofs
-    ctx.fillStyle = "#8a3a19";
-    ctx.beginPath(); ctx.moveTo(x - w/2 - 10, y - h); ctx.lineTo(x, y - h - 45); ctx.lineTo(x + w/2 + 10, y - h); ctx.closePath(); ctx.fill();
-    // Towers
-    ctx.fillStyle = "#d1b58a"; ctx.fillRect(x - w/2 - 20, y - h - 20, 25, h + 20);
-    ctx.fillRect(x + w/2 - 5, y - h - 20, 25, h + 20);
-    ctx.fillStyle = "#702c11";
-    ctx.beginPath(); ctx.moveTo(x - w/2 - 25, y - h - 20); ctx.lineTo(x - w/2 - 7, y - h - 65); ctx.lineTo(x - w/2 + 10, y - h - 20); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(x + w/2 - 10, y - h - 20); ctx.lineTo(x + w/2 + 7, y - h - 65); ctx.lineTo(x + w/2 + 25, y - h - 20); ctx.fill();
-    // Door & Windows
-    ctx.fillStyle = "#331100"; ctx.fillRect(x - 15, y - 30, 30, 30);
-    ctx.fillStyle = "#ffe066";
-    ctx.fillRect(x - 50, y - 55, 25, 25); ctx.fillRect(x + 25, y - 55, 25, 25);
-    ctx.fillRect(x - 10, y - h - 25, 20, 20);
-    // Aura behind mansion
-    const aura = ctx.createRadialGradient(x, y - h/2, 10, x, y - h/2, 180);
-    aura.addColorStop(0, "rgba(255, 215, 0, 0.4)");
-    aura.addColorStop(1, "transparent");
-    ctx.fillStyle = aura;
-    ctx.beginPath(); ctx.arc(x, y - h/2, 180, 0, Math.PI*2); ctx.fill();
-  }
-
-  function drawTree(x, y, scale) {
-    ctx.fillStyle = score < 20 ? "#332211" : "#5c3d11";
-    ctx.fillRect(x - 4*scale, y - 20*scale, 8*scale, 20*scale); // Trunk
-    if (score >= 20) {
-      ctx.fillStyle = score >= 90 ? "#4ade59" : (score >= 60 ? "#2d7a3a" : "#24572c");
-      ctx.beginPath(); ctx.arc(x, y - 25*scale, 18*scale, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x - 10*scale, y - 35*scale, 15*scale, 0, Math.PI*2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x + 10*scale, y - 32*scale, 14*scale, 0, Math.PI*2); ctx.fill();
-    } else {
-      ctx.strokeStyle = "#332211"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, y-15*scale); ctx.lineTo(x-10*scale, y-25*scale); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x, y-18*scale); ctx.lineTo(x+8*scale, y-28*scale); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - w * 0.6, y - h); ctx.lineTo(x, y - h - h * 0.7); ctx.lineTo(x + w * 0.6, y - h); ctx.closePath(); ctx.fill();
+    // Door
+    ctx.fillStyle = "#2a1500"; ctx.fillRect(x - w * 0.12, y - h * 0.35, w * 0.24, h * 0.35);
+    // Windows with glow
+    const wc = windowGlow ? "#ffe066" : "#333";
+    ctx.fillStyle = wc;
+    const ww = w * 0.18, wh = h * 0.18;
+    ctx.fillRect(x - w * 0.38, y - h * 0.7, ww, wh);
+    ctx.fillRect(x + w * 0.20, y - h * 0.7, ww, wh);
+    if (windowGlow) {
+      ctx.shadowColor = "#ffe066"; ctx.shadowBlur = 15;
+      ctx.fillRect(x - w * 0.38, y - h * 0.7, ww, wh);
+      ctx.fillRect(x + w * 0.20, y - h * 0.7, ww, wh);
+      ctx.shadowBlur = 0;
     }
   }
 
-  function drawField(xCenter, yTop, width, rows, cropDensity, isGlowing) {
-    ctx.fillStyle = score < 20 ? "#24180d" : (score < 60 ? "#4a3219" : "#634322");
-    ctx.beginPath();
-    ctx.moveTo(xCenter - width*0.3, yTop);
-    ctx.lineTo(xCenter + width*0.3, yTop);
-    ctx.lineTo(xCenter + width*0.6, yTop + rows*12);
-    ctx.lineTo(xCenter - width*0.6, yTop + rows*12);
-    ctx.fill();
+  function drawCastle(x, y) {
+    const w = 200, h = 120;
+    // Aura behind
+    const aura = ctx.createRadialGradient(x, y - h * 0.5, 10, x, y - h * 0.5, 250);
+    aura.addColorStop(0, "rgba(255,215,0,0.5)"); aura.addColorStop(0.5, "rgba(255,180,50,0.15)"); aura.addColorStop(1, "transparent");
+    ctx.fillStyle = aura;
+    ctx.beginPath(); ctx.arc(x, y - h * 0.5, 250, 0, Math.PI * 2); ctx.fill();
+    // Main body
+    ctx.fillStyle = "#e8d5b0"; ctx.fillRect(x - w / 2, y - h, w, h);
+    // Grand roof
+    ctx.fillStyle = "#8a2e10";
+    ctx.beginPath(); ctx.moveTo(x - w * 0.55, y - h); ctx.lineTo(x, y - h - 70); ctx.lineTo(x + w * 0.55, y - h); ctx.closePath(); ctx.fill();
+    // Left tower
+    ctx.fillStyle = "#d4b88a"; ctx.fillRect(x - w / 2 - 30, y - h - 40, 35, h + 40);
+    ctx.fillStyle = "#771e0a";
+    ctx.beginPath(); ctx.moveTo(x - w / 2 - 35, y - h - 40); ctx.lineTo(x - w / 2 - 12, y - h - 90); ctx.lineTo(x - w / 2 + 10, y - h - 40); ctx.fill();
+    // Right tower
+    ctx.fillStyle = "#d4b88a"; ctx.fillRect(x + w / 2 - 5, y - h - 40, 35, h + 40);
+    ctx.fillStyle = "#771e0a";
+    ctx.beginPath(); ctx.moveTo(x + w / 2 - 10, y - h - 40); ctx.lineTo(x + w / 2 + 12, y - h - 90); ctx.lineTo(x + w / 2 + 35, y - h - 40); ctx.fill();
+    // Flags on towers
+    ctx.fillStyle = "#ffd700";
+    ctx.fillRect(x - w / 2 - 13, y - h - 90, 2, 15);
+    ctx.fillStyle = "#0052ff"; ctx.fillRect(x - w / 2 - 11, y - h - 90, 14, 10);
+    ctx.fillStyle = "#ffd700";
+    ctx.fillRect(x + w / 2 + 11, y - h - 90, 2, 15);
+    ctx.fillStyle = "#0052ff"; ctx.fillRect(x + w / 2 + 13, y - h - 90, 14, 10);
+    // Grand door
+    ctx.fillStyle = "#3a1800";
+    ctx.beginPath(); ctx.moveTo(x - 20, y); ctx.lineTo(x - 20, y - 45); ctx.arc(x, y - 45, 20, Math.PI, 0); ctx.lineTo(x + 20, y); ctx.fill();
+    // Many windows glowing
+    ctx.fillStyle = "#ffe066"; ctx.shadowColor = "#ffe066"; ctx.shadowBlur = 20;
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (c === 2 && r === 0) continue;
+        ctx.fillRect(x - 80 + c * 38, y - h + 15 + r * 32, 22, 18);
+      }
+    }
+    // Tower windows
+    ctx.fillRect(x - w / 2 - 22, y - h - 30, 15, 18);
+    ctx.fillRect(x + w / 2 + 5, y - h - 30, 15, 18);
+    ctx.shadowBlur = 0;
+  }
 
+  function drawTree(x, y, scale) {
+    const trunk = score < 20 ? "#221508" : "#5c3d11";
+    const leaf = score >= 90 ? "#55dd55" : (score >= 60 ? "#2e8a3a" : (score >= 40 ? "#256830" : "#1a4020"));
+    ctx.fillStyle = trunk;
+    ctx.fillRect(x - 5 * scale, y, 10 * scale, 25 * scale);
+    if (score < 20) {
+      // Dead tree — branches only
+      ctx.strokeStyle = "#332211"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x, y + 5); ctx.lineTo(x - 15 * scale, y - 15 * scale); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 12 * scale, y - 20 * scale); ctx.stroke();
+      return;
+    }
+    ctx.fillStyle = leaf;
+    ctx.beginPath(); ctx.arc(x, y - 10 * scale, 22 * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x - 14 * scale, y - 20 * scale, 18 * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 14 * scale, y - 16 * scale, 17 * scale, 0, Math.PI * 2); ctx.fill();
+    if (score >= 60) {
+      ctx.beginPath(); ctx.arc(x, y - 28 * scale, 14 * scale, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawField(xCenter, yTop, width, rows, cols, isGlowing) {
+    // Soil
+    ctx.fillStyle = score < 40 ? "#1e1208" : (score < 60 ? "#3a2814" : "#4d3820");
+    ctx.beginPath();
+    ctx.moveTo(xCenter - width * 0.4, yTop);
+    ctx.lineTo(xCenter + width * 0.4, yTop);
+    ctx.lineTo(xCenter + width * 0.7, yTop + rows * 14);
+    ctx.lineTo(xCenter - width * 0.7, yTop + rows * 14);
+    ctx.fill();
+    // Crops
     for (let r = 0; r < rows; r++) {
-      const rowY = yTop + r * 12 + 8;
-      const rowWidth = width * 0.3 + (width * 0.3 * (r / rows));
-      for (let c = 0; c < 10; c++) {
-        if (pseudoRandom(r*10+c) > cropDensity) continue;
-        const cx = xCenter - rowWidth + (rowWidth * 2 * c / 9);
-        
-        ctx.strokeStyle = score < 20 ? "#4a3219" : "#4fc87a";
+      const rowY = yTop + r * 14 + 10;
+      const rw = width * 0.4 + (width * 0.3 * (r / rows));
+      for (let c = 0; c < cols; c++) {
+        const cx = xCenter - rw + (rw * 2 * c / (cols - 1 || 1));
+        // Stem
+        ctx.strokeStyle = isGlowing ? "#66ee88" : "#3fa86a";
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(cx, rowY); ctx.lineTo(cx, rowY - 8); ctx.stroke();
-        
-        if (score >= 40 && pseudoRandom(r*10+c+100) < 0.6) {
-          ctx.fillStyle = isGlowing ? "#ffea00" : (score >= 60 ? "#ff5555" : "#ffaa00");
-          if (isGlowing) {
-            ctx.shadowColor = "#ffea00"; ctx.shadowBlur = 6;
-          }
-          ctx.beginPath(); ctx.arc(cx, rowY - 10, 3.5, 0, Math.PI*2); ctx.fill();
-          ctx.shadowBlur = 0;
+        ctx.beginPath(); ctx.moveTo(cx, rowY); ctx.lineTo(cx, rowY - 12); ctx.stroke();
+        // Fruit
+        const fruitColors = ["#ffd700", "#ff6644", "#ff44aa", "#66eeff"];
+        ctx.fillStyle = fruitColors[(r + c) % fruitColors.length];
+        if (isGlowing) { ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 12; }
+        ctx.beginPath(); ctx.arc(cx, rowY - 14, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  function drawWindmill(x, y, scale) {
+    const bw = 30 * scale, bh = 100 * scale;
+    ctx.fillStyle = "#d8d8d8"; ctx.fillRect(x - bw / 2, y - bh, bw, bh);
+    ctx.fillStyle = "#aa3333";
+    ctx.beginPath(); ctx.moveTo(x - bw * 0.6, y - bh); ctx.lineTo(x, y - bh - 35 * scale); ctx.lineTo(x + bw * 0.6, y - bh); ctx.fill();
+    // Blades
+    const bladeLen = 65 * scale;
+    ctx.save();
+    ctx.translate(x, y - bh);
+    ctx.rotate(t * 0.8);
+    ctx.fillStyle = "#f4f4f4";
+    for (let i = 0; i < 4; i++) {
+      ctx.save(); ctx.rotate(i * Math.PI / 2);
+      ctx.fillRect(-5, 0, 10, bladeLen);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function drawWell(x, y) {
+    ctx.fillStyle = "#777"; ctx.fillRect(x - 14, y - 20, 28, 20);
+    ctx.fillStyle = "#999"; ctx.fillRect(x - 16, y - 3, 32, 5);
+    ctx.strokeStyle = "#555"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x - 12, y - 20); ctx.lineTo(x - 14, y - 32); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + 12, y - 20); ctx.lineTo(x + 14, y - 32); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x - 14, y - 32); ctx.lineTo(x + 14, y - 32); ctx.stroke();
+    ctx.fillStyle = "#224488";
+    ctx.beginPath(); ctx.ellipse(x, y - 5, 10, 5, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function drawSilo(x, y, scale) {
+    const sw = 28 * scale, sh = 70 * scale;
+    ctx.fillStyle = "#8b7355"; ctx.fillRect(x - sw / 2, y - sh, sw, sh);
+    ctx.fillStyle = "#a0522d";
+    ctx.beginPath(); ctx.arc(x, y - sh, sw / 2, Math.PI, 0); ctx.fill();
+    // Bands
+    ctx.strokeStyle = "#6b4c2a"; ctx.lineWidth = 2;
+    for (let i = 1; i < 4; i++) {
+      ctx.beginPath(); ctx.moveTo(x - sw / 2, y - sh + i * sh / 4); ctx.lineTo(x + sw / 2, y - sh + i * sh / 4); ctx.stroke();
+    }
+  }
+
+  function drawGoldenStatue(x, y) {
+    // Pedestal
+    ctx.fillStyle = "#555"; ctx.fillRect(x - 18, y - 20, 36, 20);
+    // Figure
+    ctx.fillStyle = "#ffd700"; ctx.shadowColor = "#ffd700"; ctx.shadowBlur = 25;
+    ctx.fillRect(x - 6, y - 70, 12, 50);
+    ctx.beginPath(); ctx.arc(x, y - 75, 10, 0, Math.PI * 2); ctx.fill();
+    // Arms
+    ctx.fillRect(x - 20, y - 60, 40, 6);
+    ctx.shadowBlur = 0;
+  }
+
+  // ════════════════════════════════════════════
+  // 4. RENDER BY PHASE — big scale differences
+  // ════════════════════════════════════════════
+  if (score < 20) {
+    // ── Phase 1: Barren wasteland ──
+    drawTree(W * 0.12, groundY - 5, 0.7);
+    drawTree(W * 0.88, groundY - 2, 0.5);
+    drawHouse(W * 0.5, groundY + 2, 35, 28, "#2a2018", "#1a120a", false);
+    drawField(W * 0.25, groundY + 15, 40, 1, 3, false);
+
+  } else if (score < 40) {
+    // ── Phase 2: Growing settlement ──
+    drawTree(W * 0.10, groundY - 5, 1.3);
+    drawTree(W * 0.90, groundY - 2, 1.1);
+    drawTree(W * 0.72, groundY - 5, 0.8);
+    drawHouse(W * 0.5, groundY + 2, 65, 55, "#7a5533", "#4a2a18", true);
+    drawField(W * 0.20, groundY + 15, 90, 4, 8, false);
+    drawField(W * 0.80, groundY + 20, 80, 3, 7, false);
+
+  } else if (score < 60) {
+    // ── Phase 3: Thriving farm ──
+    drawTree(W * 0.08, groundY - 8, 1.8);
+    drawTree(W * 0.92, groundY - 5, 1.6);
+    drawTree(W * 0.68, groundY - 10, 1.2);
+    drawTree(W * 0.30, groundY - 5, 1.0);
+    drawHouse(W * 0.50, groundY + 2, 100, 80, "#bb7744", "#882211", true);
+    drawWell(W * 0.34, groundY + 5);
+    drawSilo(W * 0.72, groundY + 2, 0.8);
+    drawField(W * 0.15, groundY + 20, 140, 6, 12, false);
+    drawField(W * 0.85, groundY + 25, 130, 5, 10, false);
+
+  } else if (score < 90) {
+    // ── Phase 4: Grand estate ──
+    drawTree(W * 0.06, groundY - 10, 2.2);
+    drawTree(W * 0.94, groundY - 8, 2.0);
+    drawTree(W * 0.25, groundY - 15, 1.6);
+    drawTree(W * 0.75, groundY - 12, 1.4);
+    drawWindmill(W * 0.15, groundY + 2, 1.0);
+    drawHouse(W * 0.50, groundY + 2, 130, 100, "#d4a870", "#8a3015", true);
+    drawHouse(W * 0.80, groundY + 10, 70, 55, "#a05533", "#5c2510", true);
+    drawSilo(W * 0.88, groundY + 5, 1.0);
+    drawWell(W * 0.38, groundY + 5);
+    drawField(W * 0.12, groundY + 25, 180, 8, 14, true);
+    drawField(W * 0.88, groundY + 35, 180, 7, 12, true);
+
+  } else {
+    // ── Phase 5: Legendary domain ──
+    drawTree(W * 0.04, groundY - 10, 2.8);
+    drawTree(W * 0.96, groundY - 8, 2.6);
+    drawTree(W * 0.18, groundY - 18, 2.0);
+    drawTree(W * 0.82, groundY - 15, 1.8);
+    drawWindmill(W * 0.12, groundY + 2, 1.2);
+    drawWindmill(W * 0.88, groundY + 2, 1.0);
+    drawCastle(W * 0.50, groundY + 5);
+    drawSilo(W * 0.32, groundY + 5, 1.2);
+    drawGoldenStatue(W * 0.72, groundY + 5);
+    drawField(W * 0.08, groundY + 30, 220, 10, 16, true);
+    drawField(W * 0.50, groundY + H * 0.30, 200, 8, 14, true);
+    drawField(W * 0.92, groundY + 35, 220, 10, 16, true);
+  }
+
+  // ════════════════════════════════════════════
+  // 5. FENCE
+  // ════════════════════════════════════════════
+  if (score >= 20) {
+    ctx.strokeStyle = score >= 60 ? "#ddd" : "#5c3d11";
+    ctx.lineWidth = score >= 60 ? 3 : 2;
+    const fs = score >= 60 ? 16 : 24;
+    for (let i = 0; i < W / fs; i++) {
+      if (score < 40 && pseudoRandom(i) < 0.3) continue;
+      const fx = i * fs + 3;
+      ctx.beginPath(); ctx.moveTo(fx, H - 30); ctx.lineTo(fx, H - 8); ctx.stroke();
+      if (i > 0) {
+        ctx.beginPath(); ctx.moveTo(fx - fs, H - 22); ctx.lineTo(fx, H - 22); ctx.stroke();
+        if (score >= 40) {
+          ctx.beginPath(); ctx.moveTo(fx - fs, H - 14); ctx.lineTo(fx, H - 14); ctx.stroke();
         }
       }
     }
   }
 
-  function drawWindmill(x, y) {
-    ctx.fillStyle = "#d1d1d1"; ctx.fillRect(x - 20, y - 80, 40, 80);
-    ctx.fillStyle = "#a83232"; 
-    ctx.beginPath(); ctx.moveTo(x-25, y-80); ctx.lineTo(x, y-110); ctx.lineTo(x+25, y-80); ctx.fill();
-    // Blades
-    const time = Date.now() / 1500;
-    ctx.save();
-    ctx.translate(x, y-80);
-    ctx.rotate(time);
-    ctx.fillStyle = "#f0f0f0";
-    ctx.fillRect(-6, -55, 12, 110);
-    ctx.fillRect(-55, -6, 110, 12);
-    ctx.restore();
-  }
-
-  // 3. Render Items by Phase
-  if (score < 20) {
-    // Phase 1
-    drawTree(W * 0.15, groundY + 20, 1);
-    drawTree(W * 0.85, groundY + 10, 0.8);
-    drawHouse(W * 0.5, groundY + 5, 30, 25, "#30261c", "#1c150e");
-    drawField(W * 0.25, groundY + 30, 50, 2, 0.2, false);
-  } else if (score < 40) {
-    // Phase 2
-    drawTree(W * 0.15, groundY + 20, 1.4);
-    drawTree(W * 0.85, groundY + 10, 1.2);
-    drawHouse(W * 0.5, groundY + 5, 50, 40, "#80583b", "#4a301e");
-    drawField(W * 0.25, groundY + 20, 70, 4, 0.6, false);
-    drawField(W * 0.75, groundY + 30, 60, 3, 0.4, false);
-  } else if (score < 60) {
-    // Phase 3
-    drawTree(W * 0.12, groundY + 15, 1.8);
-    drawTree(W * 0.88, groundY + 10, 1.5);
-    drawTree(W * 0.7, groundY - 5, 1.1);
-    drawHouse(W * 0.5, groundY + 5, 75, 60, "#bd865e", "#7a3111");
-    // Well
-    ctx.fillStyle="#666"; ctx.fillRect(W*0.32 - 12, groundY+10 - 12, 24, 12);
-    ctx.fillStyle="#888"; ctx.fillRect(W*0.32 - 14, groundY+10 - 2, 28, 4);
-    
-    drawField(W * 0.20, groundY + 30, 100, 6, 0.8, false);
-    drawField(W * 0.80, groundY + 40, 90, 5, 0.7, false);
-  } else if (score < 90) {
-    // Phase 4
-    drawTree(W * 0.1, groundY + 10, 2.2);
-    drawTree(W * 0.9, groundY + 15, 2.0);
-    drawTree(W * 0.25, groundY - 5, 1.4);
-    drawHouse(W * 0.55, groundY + 5, 95, 75, "#d1b490", "#8a3a19");
-    drawHouse(W * 0.35, groundY + 15, 60, 50, "#a65233", "#5c2510"); // Barn
-    drawField(W * 0.18, groundY + 40, 130, 7, 1.0, true);
-    drawField(W * 0.82, groundY + 50, 140, 7, 0.9, true);
-  } else {
-    // Phase 5
-    drawTree(W * 0.08, groundY + 20, 2.8);
-    drawTree(W * 0.92, groundY + 30, 2.8);
-    drawTree(W * 0.2, groundY, 1.8);
-    drawTree(W * 0.8, groundY, 1.8);
-    
-    drawWindmill(W * 0.22, groundY - 5);
-    drawMansion(W * 0.5, groundY + 10);
-    drawField(W * 0.15, groundY + 50, 160, 9, 1.0, true);
-    drawField(W * 0.85, groundY + 60, 180, 9, 1.0, true);
-  }
-
-  // 4. Foreground Fence & Particles
-  ctx.strokeStyle = score < 20 ? "#221100" : (score < 60 ? "#5c3d11" : "#e0e0e0");
-  ctx.lineWidth = score >= 60 ? 4 : 3;
-  const fSpace = score >= 60 ? 18 : 28;
-  for(let i=0; i<W/fSpace; i++) {
-    if (score < 20 && pseudoRandom(i) < 0.4) continue;
-    const fx = i * fSpace + 5;
-    ctx.beginPath(); ctx.moveTo(fx, H - 25); ctx.lineTo(fx, H - 5); ctx.stroke();
-    if (i > 0 && !(score < 20 && pseudoRandom(i+10) < 0.3)) {
-      ctx.beginPath(); ctx.moveTo(fx - fSpace, H - 18); ctx.lineTo(fx, H - 18); ctx.stroke();
-      if (score >= 40) {
-        ctx.beginPath(); ctx.moveTo(fx - fSpace, H - 10); ctx.lineTo(fx, H - 10); ctx.stroke();
-      }
-    }
-  }
-
-  // Magic Particles for Score >= 60
+  // ════════════════════════════════════════════
+  // 6. MAGIC PARTICLES (animated)
+  // ════════════════════════════════════════════
   if (score >= 60) {
-    const pCount = score >= 90 ? 50 : 20;
-    const time = Date.now() / 1500;
-    for(let i=0; i<pCount; i++) {
-      const px = W * pseudoRandom(i);
-      const pyBase = H - (H * 0.45 * pseudoRandom(i+100));
-      const py = pyBase - (time * 30 * pseudoRandom(i+200)) % (H*0.45);
-      ctx.fillStyle = score >= 90 ? "rgba(255, 230, 100, 0.9)" : "rgba(100, 255, 200, 0.7)";
-      ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(px, py, 1.5 + pseudoRandom(i+300)*2, 0, Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
+    const pCount = score >= 90 ? 80 : 30;
+    for (let i = 0; i < pCount; i++) {
+      const px = W * pseudoRandom(i * 3);
+      const speed = 15 + pseudoRandom(i * 7 + 2) * 40;
+      const py = H - ((t * speed + pseudoRandom(i * 11) * H) % (H * 0.85));
+      const pr = 1.5 + pseudoRandom(i * 5 + 1) * 3;
+      if (score >= 90) {
+        ctx.fillStyle = `rgba(255,${200 + Math.floor(pseudoRandom(i+99)*55)},${Math.floor(pseudoRandom(i+77)*100)},${0.6 + pseudoRandom(i+33)*0.4})`;
+        ctx.shadowColor = "#ffdd44"; ctx.shadowBlur = 18;
+      } else {
+        ctx.fillStyle = `rgba(${80+Math.floor(pseudoRandom(i+5)*100)},255,${180+Math.floor(pseudoRandom(i+8)*75)},${0.4+pseudoRandom(i+22)*0.5})`;
+        ctx.shadowColor = "#44ffaa"; ctx.shadowBlur = 12;
+      }
+      ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
     }
+    ctx.shadowBlur = 0;
   }
 }
 
@@ -739,26 +836,26 @@ function SpiritCanvas({ spiritState, todayTxCount }) {
   );
 }
 
-function FarmCanvas({ growthScore, firstTxDate }) {
+function FarmCanvas({ growthScore }) {
   const canvasRef = useRef(null);
   const animRef = useRef(null);
 
   useEffect(() => {
     const animate = () => {
       if (canvasRef.current) {
-        drawFarm(canvasRef.current, growthScore, firstTxDate);
+        drawFarm(canvasRef.current, growthScore);
       }
       animRef.current = requestAnimationFrame(animate);
     };
     animRef.current = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animRef.current);
-  }, [growthScore, firstTxDate]);
+  }, [growthScore]);
 
   return (
     <canvas
       ref={canvasRef}
       width={600}
-      height={300}
+      height={400}
       className="farm-canvas"
     />
   );
@@ -973,7 +1070,7 @@ function ResultScreen({ data, onBack, onShare }) {
 
         <div className="farm-card">
           <div className="farm-canvas-wrapper">
-            <FarmCanvas growthScore={data.growthScore} firstTxDate={data.firstTxDate} />
+            <FarmCanvas growthScore={data.growthScore} />
             <div className="farm-overlay-badge">
               <span>⚔️ Growth Score: {data.growthScore} (Lv.{data.level})</span>
             </div>
@@ -1066,7 +1163,7 @@ function ResultScreen({ data, onBack, onShare }) {
           <div className={`accordion-body ${accordionOpen ? "open" : ""}`}>
             <div className="data-list">
               {[
-                { icon: "📅", label: "Base参入日", value: data.firstTxDate },
+
                 { icon: "⚡", label: "総トランザクション数", value: `${data.totalTxCount.toLocaleString()} 回` },
                 { icon: "🏦", label: "保有トークン種類", value: `${data.uniqueTokenCount} 種` },
                 { icon: "⛽", label: "推定消費ガス代", value: `$${data.totalGas}` },
