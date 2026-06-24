@@ -30,11 +30,11 @@ const I18N = {
     heroTitle1: "Transform your Base",
     heroTitle2: "footprint into a Spirit",
     heroSub: "Turn your on-chain activity on the Base network into a visual farm and spirit. No wallet connection required.",
-    inputLabel: "Wallet Address or ENS",
-    inputPlaceholder: "0x... or vitalik.eth",
+    inputLabel: "Wallet Address",
+    inputPlaceholder: "0x...",
     securityText: "Read-only — No wallet connection or signature required",
     btnObserve: "🌾 Trace Footprints",
-    errorInput: "Please enter an address or ENS name",
+    errorInput: "Please enter a valid 0x... address",
     errorFetch: "Failed to fetch data. Make sure it's a valid Base address.",
     tickerLabel: "Recently Observed Farms",
     backBtn: "← Back",
@@ -97,11 +97,11 @@ const I18N = {
     heroTitle1: "あなたのBase上の",
     heroTitle2: "足跡を精霊に変換",
     heroSub: "Baseネットワーク上のオンチェーン活動を、農場と精霊のビジュアルに変換します。ウォレット接続は一切不要です。",
-    inputLabel: "ウォレットアドレスまたはENS",
-    inputPlaceholder: "0x... または vitalik.eth",
+    inputLabel: "ウォレットアドレス",
+    inputPlaceholder: "0x...",
     securityText: "読み取り専用 — ウォレットの接続・署名は一切不要です",
     btnObserve: "🌾 足跡を辿る",
-    errorInput: "アドレスまたはENS名を入力してください",
+    errorInput: "正しい0x...アドレスを入力してください",
     errorFetch: "データの取得に失敗しました。",
     tickerLabel: "最近観測された農場",
     backBtn: "← 戻る",
@@ -169,7 +169,6 @@ const SPIRIT_STATES = [
 // ─── Helpers ────────────────────────────────────────────────
 function shortenAddress(addr) {
   if (!addr) return "";
-  if (addr.includes(".eth")) return addr;
   return addr.slice(0, 6) + "..." + addr.slice(-4);
 }
 
@@ -317,13 +316,13 @@ function drawSpirit(canvas, spiritState, activityLevel) {
   ctx.fill();
 }
 
-// STORYBOOK ILLUSTRATION OVERHAUL
+// ─── STORYBOOK ILLUSTRATION OVERHAUL (DAYTIME / WARM) ───
 function drawFarm(canvas, score) {
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const W = canvas.width;
   const H = canvas.height;
-  const horizonY = H * 0.55;
+  const horizonY = H * 0.45;
 
   ctx.clearRect(0, 0, W, H);
   const t = Date.now() / 1000;
@@ -332,318 +331,311 @@ function drawFarm(canvas, score) {
     return x - Math.floor(x);
   };
 
-  // 1. STORYBOOK SKY & LIGHTING
+  // 1. STORYBOOK WARM SKY
   const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-  if (score < 20) {
-    skyGrad.addColorStop(0, "#010514"); skyGrad.addColorStop(1, "#0a1226");
-  } else if (score < 60) {
-    skyGrad.addColorStop(0, "#081030"); skyGrad.addColorStop(1, "#1a2b58");
-  } else {
-    skyGrad.addColorStop(0, "#100c3b"); skyGrad.addColorStop(0.5, "#251b66"); skyGrad.addColorStop(1, "#603050");
-  }
+  skyGrad.addColorStop(0, "#8bb2d9"); // Soft blue at top
+  skyGrad.addColorStop(0.6, "#e8cd9c"); // Warm yellow/peach
+  skyGrad.addColorStop(1, "#f4dfb6"); // Bright warm horizon
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, W, horizonY);
 
-  // Stars
-  const starCount = score < 20 ? 10 : (score < 60 ? 50 : 100);
-  for (let i = 0; i < starCount; i++) {
-    const sx = pseudoRandom(i * 3) * W;
-    const sy = pseudoRandom(i * 7) * horizonY;
-    const sr = pseudoRandom(i * 11) * 1.5;
-    ctx.fillStyle = "rgba(255,255,255," + (0.3 + pseudoRandom(i) * 0.7) + ")";
-    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2); ctx.fill();
-  }
+  // Soft Sun
+  const sunX = W * 0.15;
+  const sunY = horizonY * 0.4;
+  const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 120);
+  sunGlow.addColorStop(0, "rgba(255, 255, 255, 1)");
+  sunGlow.addColorStop(0.3, "rgba(255, 240, 180, 0.8)");
+  sunGlow.addColorStop(1, "transparent");
+  ctx.fillStyle = sunGlow;
+  ctx.beginPath(); ctx.arc(sunX, sunY, 120, 0, Math.PI * 2); ctx.fill();
 
-  // Moon (Light Source)
-  const moonX = W * 0.85;
-  const moonY = horizonY * 0.3;
-  if (score >= 20) {
-    const glow = ctx.createRadialGradient(moonX, moonY, 10, moonX, moonY, 150);
-    glow.addColorStop(0, "rgba(255,255,200,0.5)");
-    glow.addColorStop(1, "transparent");
-    ctx.fillStyle = glow;
-    ctx.beginPath(); ctx.arc(moonX, moonY, 150, 0, Math.PI * 2); ctx.fill();
+  // Distant clouds
+  ctx.fillStyle = "rgba(255, 245, 220, 0.6)";
+  ctx.beginPath();
+  ctx.arc(W*0.7, horizonY - 40, 20, 0, Math.PI*2);
+  ctx.arc(W*0.75, horizonY - 45, 30, 0, Math.PI*2);
+  ctx.arc(W*0.82, horizonY - 35, 25, 0, Math.PI*2);
+  ctx.fill();
 
-    ctx.fillStyle = "#fff9d6";
-    ctx.beginPath(); ctx.arc(moonX, moonY, 25, 0, Math.PI * 2); ctx.fill();
-    // Craters
-    ctx.fillStyle = "rgba(0,0,0,0.05)";
-    ctx.beginPath(); ctx.arc(moonX - 8, moonY + 5, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(moonX + 6, moonY - 6, 6, 0, Math.PI * 2); ctx.fill();
-  }
+  // Background Mountains / Hills
+  ctx.fillStyle = "#cca272";
+  ctx.beginPath();
+  ctx.moveTo(0, horizonY);
+  ctx.quadraticCurveTo(W * 0.25, horizonY - 60, W * 0.6, horizonY);
+  ctx.fill();
+  ctx.fillStyle = "#b58c5c";
+  ctx.beginPath();
+  ctx.moveTo(W * 0.4, horizonY);
+  ctx.quadraticCurveTo(W * 0.7, horizonY - 80, W, horizonY);
+  ctx.lineTo(W, horizonY);
+  ctx.fill();
 
-  // Background Mountains (Distant Midground Layering)
-  if (score >= 40) {
-    ctx.fillStyle = score < 60 ? "#121b36" : "#231a47";
-    ctx.beginPath();
-    ctx.moveTo(0, horizonY);
-    ctx.quadraticCurveTo(W * 0.2, horizonY - 60, W * 0.5, horizonY);
-    ctx.quadraticCurveTo(W * 0.8, horizonY - 90, W, horizonY);
-    ctx.lineTo(0, horizonY);
-    ctx.fill();
-  }
-
-  // 2. STORYBOOK GROUND
+  // 2. WHEAT FIELDS (Midground Base)
   const groundGrad = ctx.createLinearGradient(0, horizonY, 0, H);
-  if (score < 20) {
-    groundGrad.addColorStop(0, "#0d130a"); groundGrad.addColorStop(1, "#151e0c");
-  } else if (score < 60) {
-    groundGrad.addColorStop(0, "#162b19"); groundGrad.addColorStop(1, "#2a4422");
-  } else {
-    groundGrad.addColorStop(0, "#22163b"); groundGrad.addColorStop(1, "#274c30");
-  }
+  groundGrad.addColorStop(0, "#d8a643"); // Golden yellow top
+  groundGrad.addColorStop(0.5, "#cc8c2b"); // Richer gold mid
+  groundGrad.addColorStop(1, "#8a661f"); // Darker dirt/wheat base
   ctx.fillStyle = groundGrad;
   ctx.fillRect(0, horizonY, W, H - horizonY);
 
-  // Distant Trees
-  for (let i = 0; i < 15; i++) {
-    const tx = pseudoRandom(i*5) * W;
-    if (tx > W * 0.35 && tx < W * 0.65) continue; // Leave middle for house
-    const ty = horizonY + pseudoRandom(i*8) * 20 - 5;
-    const treeGrad = ctx.createLinearGradient(tx, ty - 30, tx, ty);
-    treeGrad.addColorStop(0, score < 60 ? "#2e4a2c" : "#3c245c");
-    treeGrad.addColorStop(1, "#0e1410");
-    ctx.fillStyle = treeGrad;
-    ctx.beginPath();
-    ctx.moveTo(tx - 10, ty);
-    ctx.lineTo(tx, ty - 25 - pseudoRandom(i)*15);
-    ctx.lineTo(tx + 10, ty);
-    ctx.fill();
-  }
-
-  // 3. DIMENSIONAL PATH
+  // 3. ORGANIC DIRT PATH
   const pathGrad = ctx.createLinearGradient(0, horizonY, 0, H);
-  pathGrad.addColorStop(0, score < 40 ? "#221a11" : "#362214");
-  pathGrad.addColorStop(1, score < 40 ? "#382a1c" : "#5e422a");
+  pathGrad.addColorStop(0, "#ad8860");
+  pathGrad.addColorStop(1, "#7d5e41");
   ctx.fillStyle = pathGrad;
   ctx.beginPath();
-  // Use Bezier for a winding, dimensional path
   ctx.moveTo(W * 0.5, horizonY);
-  ctx.bezierCurveTo(W * 0.6, H * 0.7, W * 0.3, H * 0.85, W * 0.2, H);
-  ctx.lineTo(W * 0.8, H);
-  ctx.bezierCurveTo(W * 0.7, H * 0.85, W * 0.65, H * 0.7, W * 0.55, horizonY);
+  ctx.bezierCurveTo(W * 0.7, H * 0.6, W * 0.2, H * 0.8, W * 0.3, H);
+  ctx.lineTo(W * 0.5, H);
+  ctx.bezierCurveTo(W * 0.4, H * 0.8, W * 0.8, H * 0.6, W * 0.55, horizonY);
   ctx.fill();
 
-  // Highlight along the path edge
-  ctx.strokeStyle = "rgba(255, 230, 150, 0.15)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(W * 0.5, horizonY);
-  ctx.bezierCurveTo(W * 0.6, H * 0.7, W * 0.3, H * 0.85, W * 0.2, H);
-  ctx.stroke();
+  // Path texture (stones/dirt)
+  ctx.fillStyle = "rgba(0,0,0,0.05)";
+  for(let i=0; i<40; i++) {
+    const px = W*0.3 + pseudoRandom(i)*W*0.4;
+    const py = horizonY + pseudoRandom(i*2)*(H-horizonY);
+    ctx.beginPath(); ctx.ellipse(px, py, 4+pseudoRandom(i)*6, 2+pseudoRandom(i)*3, 0, 0, Math.PI*2); ctx.fill();
+  }
 
-  // 4. DRAWING UTILS WITH SHADING
+  // 4. DRAWING UTILS
   function drawTree(x, y, scale) {
-    // Shaded Trunk
-    const trunkGrad = ctx.createLinearGradient(x - 5*scale, y, x + 5*scale, y);
-    trunkGrad.addColorStop(0, "#2a180e");
-    trunkGrad.addColorStop(0.8, "#4a2a18"); // Light from moon on right
-    trunkGrad.addColorStop(1, "#1a0d06");
-    ctx.fillStyle = trunkGrad;
-    ctx.fillRect(x - 5 * scale, y, 10 * scale, 30 * scale);
+    // Trunk
+    ctx.fillStyle = "#5c402b";
+    ctx.fillRect(x - 4 * scale, y - 20 * scale, 8 * scale, 25 * scale);
     
-    // Canopy Shading
-    if (score >= 20) {
-      const leafColor = score >= 80 ? "#70d65a" : (score >= 40 ? "#3fa84b" : "#23592a");
-      const rGrad = ctx.createRadialGradient(x + 10*scale, y - 25*scale, 2*scale, x, y - 15*scale, 30*scale);
-      rGrad.addColorStop(0, leafColor); // Moon highlight
-      rGrad.addColorStop(0.7, score >= 80 ? "#225c1b" : "#123310"); // Core shadow
-      rGrad.addColorStop(1, "#0a1a09"); // Rim shadow
-      ctx.fillStyle = rGrad;
-      
-      ctx.beginPath(); ctx.arc(x, y - 15 * scale, 22 * scale, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x - 12 * scale, y - 25 * scale, 18 * scale, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x + 12 * scale, y - 22 * scale, 17 * scale, 0, Math.PI * 2); ctx.fill();
-      if (score >= 60) {
-        ctx.beginPath(); ctx.arc(x, y - 35 * scale, 14 * scale, 0, Math.PI * 2); ctx.fill();
-      }
-    } else {
-      ctx.strokeStyle = "#2a180e"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(x, y + 5); ctx.lineTo(x - 15 * scale, y - 15 * scale); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 12 * scale, y - 20 * scale); ctx.stroke();
-    }
+    // Foliage (Warm green/yellow)
+    const leafGrad = ctx.createRadialGradient(x - 5*scale, y - 35*scale, 2*scale, x, y - 25*scale, 30*scale);
+    leafGrad.addColorStop(0, "#a0b34d"); // Sunlit
+    leafGrad.addColorStop(0.6, "#5c7a29"); // Mid
+    leafGrad.addColorStop(1, "#294010"); // Shadow
+    ctx.fillStyle = leafGrad;
+    
+    ctx.beginPath(); ctx.arc(x, y - 30 * scale, 18 * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x - 12 * scale, y - 22 * scale, 15 * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + 12 * scale, y - 25 * scale, 14 * scale, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y - 42 * scale, 12 * scale, 0, Math.PI * 2); ctx.fill();
   }
 
-  function drawBuilding(x, y, w, h, isCastle, hasGlow) {
-    const wallCol = score >= 80 ? "#d8c09a" : (score >= 40 ? "#b07b5a" : "#4d3322");
-    const shadowCol = score >= 80 ? "#a68d6a" : (score >= 40 ? "#805036" : "#2d1d12");
-    const roofCol = score >= 80 ? "#3b6182" : (score >= 40 ? "#8a2d1a" : "#30100a");
-    const roofDark = score >= 80 ? "#1f364d" : (score >= 40 ? "#4d150a" : "#140602");
+  function drawBuilding(x, y, scale, type) {
+    const w = 110 * scale;
+    const h = 70 * scale;
+    
+    // Drop shadow
+    ctx.fillStyle = "rgba(80, 50, 20, 0.3)";
+    ctx.beginPath(); ctx.ellipse(x + w*0.3, y, w*0.8, w*0.2, 0, 0, Math.PI*2); ctx.fill();
 
-    // Main Body Shading
-    const bodyGrad = ctx.createLinearGradient(x - w/2, y - h, x + w/2, y - h);
-    bodyGrad.addColorStop(0, shadowCol);
-    bodyGrad.addColorStop(0.7, wallCol); // Light from right moon
-    bodyGrad.addColorStop(1, shadowCol);
-    ctx.fillStyle = bodyGrad;
-    ctx.fillRect(x - w / 2, y - h, w, h);
+    // Walls (Stucco/Wood)
+    const wallCol = type === "rich" ? "#e6dac3" : "#c4b59b";
+    const wallShadow = type === "rich" ? "#c7b79d" : "#a3957b";
+    
+    // Front Wall
+    ctx.fillStyle = wallCol;
+    ctx.fillRect(x - w/2, y - h, w, h);
+    
+    // Side Wall (shaded)
+    ctx.fillStyle = wallShadow;
+    ctx.beginPath(); ctx.moveTo(x + w/2, y - h); ctx.lineTo(x + w*0.7, y - h*0.85); ctx.lineTo(x + w*0.7, y*1.05); ctx.lineTo(x + w/2, y); ctx.fill();
 
-    if (isCastle) {
-      // Towers
-      ctx.fillStyle = bodyGrad;
-      ctx.fillRect(x - w/2 - 20, y - h - 30, 25, h + 30);
-      ctx.fillRect(x + w/2 - 5, y - h - 30, 25, h + 30);
-      // Tower roofs
-      const trGrad = ctx.createLinearGradient(x - w/2 - 25, 0, x - w/2 + 5, 0);
-      trGrad.addColorStop(0, roofDark); trGrad.addColorStop(1, roofCol);
-      ctx.fillStyle = trGrad;
-      ctx.beginPath(); ctx.moveTo(x - w/2 - 25, y - h - 30); ctx.lineTo(x - w/2 - 8, y - h - 70); ctx.lineTo(x - w/2 + 10, y - h - 30); ctx.fill();
-      const trGrad2 = ctx.createLinearGradient(x + w/2 - 10, 0, x + w/2 + 25, 0);
-      trGrad2.addColorStop(0, roofDark); trGrad2.addColorStop(1, roofCol);
-      ctx.fillStyle = trGrad2;
-      ctx.beginPath(); ctx.moveTo(x + w/2 - 10, y - h - 30); ctx.lineTo(x + w/2 + 7, y - h - 70); ctx.lineTo(x + w/2 + 25, y - h - 30); ctx.fill();
+    // Red Tile Roof
+    const roofBase = type === "rich" ? "#c24e3c" : "#8c3b2d";
+    const roofLight = type === "rich" ? "#d96450" : "#a64938";
+    const roofDark = type === "rich" ? "#8f3020" : "#5e2116";
+
+    // Front Roof (Slanted)
+    ctx.fillStyle = roofBase;
+    ctx.beginPath(); ctx.moveTo(x - w * 0.55, y - h); ctx.lineTo(x, y - h - h * 0.6); ctx.lineTo(x + w * 0.55, y - h); ctx.fill();
+    
+    // Roof texture (tiles)
+    ctx.strokeStyle = roofDark; ctx.lineWidth = 1;
+    for(let i=-5; i<=5; i++) {
+       ctx.beginPath(); ctx.moveTo(x + i*(w*0.08), y - h); ctx.lineTo(x + i*(w*0.05), y - h - h*0.5); ctx.stroke();
     }
 
-    // Main Roof
-    const roofGrad = ctx.createLinearGradient(x - w*0.6, y - h, x + w*0.6, y - h);
-    roofGrad.addColorStop(0, roofDark); roofGrad.addColorStop(0.7, roofCol); roofGrad.addColorStop(1, roofDark);
-    ctx.fillStyle = roofGrad;
-    ctx.beginPath(); ctx.moveTo(x - w * 0.55, y - h); ctx.lineTo(x, y - h - h * 0.7); ctx.lineTo(x + w * 0.55, y - h); ctx.closePath(); ctx.fill();
+    // Side Roof
+    ctx.fillStyle = roofDark;
+    ctx.beginPath(); ctx.moveTo(x + w*0.55, y - h); ctx.lineTo(x, y - h - h*0.6); ctx.lineTo(x + w*0.2, y - h - h*0.7); ctx.lineTo(x + w*0.7, y - h*0.85); ctx.fill();
 
-    // Door
-    ctx.fillStyle = "#1f1003";
-    ctx.beginPath(); ctx.arc(x, y - h*0.35, w*0.12, Math.PI, 0); ctx.lineTo(x + w*0.12, y); ctx.lineTo(x - w*0.12, y); ctx.fill();
+    // Chimney
+    if (type === "rich") {
+      ctx.fillStyle = "#8a7e72";
+      ctx.fillRect(x - w*0.3, y - h - h*0.8, w*0.12, h*0.5);
+      ctx.fillStyle = "#63584e";
+      ctx.fillRect(x - w*0.3 + w*0.12, y - h - h*0.8, w*0.05, h*0.45);
+    }
 
-    // Windows with Warm Storybook Glow
+    // Door and Porch
+    ctx.fillStyle = "#4a2a18";
+    ctx.fillRect(x - w*0.1, y - h*0.4, w*0.2, h*0.4);
+    
+    if (type === "rich") {
+      // Porch roof
+      ctx.fillStyle = roofLight;
+      ctx.beginPath(); ctx.moveTo(x - w*0.4, y - h*0.45); ctx.lineTo(x + w*0.4, y - h*0.45); ctx.lineTo(x + w*0.45, y - h*0.35); ctx.lineTo(x - w*0.45, y - h*0.35); ctx.fill();
+      // Porch pillars
+      ctx.fillStyle = "#5c402b";
+      ctx.fillRect(x - w*0.4, y - h*0.35, 4, h*0.35);
+      ctx.fillRect(x + w*0.4 - 4, y - h*0.35, 4, h*0.35);
+    }
+
+    // Windows
+    const winCol = "#38291f";
+    const winGlass = "rgba(180,210,230,0.6)"; // Sky reflection
     const drawWindow = (wx, wy) => {
-      ctx.fillStyle = hasGlow ? "#ffec99" : "#333";
-      ctx.fillRect(wx - w*0.08, wy - h*0.15, w*0.16, h*0.25);
-      if (hasGlow) {
-        ctx.shadowColor = "#ffaa00"; ctx.shadowBlur = 20;
-        ctx.fillRect(wx - w*0.08, wy - h*0.15, w*0.16, h*0.25);
-        ctx.shadowBlur = 0;
-      }
+      ctx.fillStyle = winCol; ctx.fillRect(wx, wy, w*0.15, h*0.25);
+      ctx.fillStyle = winGlass; ctx.fillRect(wx + 2, wy + 2, w*0.15 - 4, h*0.25 - 4);
+      ctx.fillStyle = winCol; ctx.fillRect(wx + w*0.07, wy, 2, h*0.25); ctx.fillRect(wx, wy + h*0.12, w*0.15, 2);
     };
-    if (isCastle) {
-      drawWindow(x - w*0.25, y - h*0.6); drawWindow(x + w*0.25, y - h*0.6);
-      drawWindow(x - w/2 - 8, y - h - 10); drawWindow(x + w/2 + 8, y - h - 10);
-    } else {
-      drawWindow(x - w*0.25, y - h*0.6); drawWindow(x + w*0.25, y - h*0.6);
-    }
-
-    // Cast light on ground
-    if (hasGlow) {
-      const gGlow = ctx.createRadialGradient(x, y, 5, x, y, w*1.2);
-      gGlow.addColorStop(0, "rgba(255, 200, 50, 0.4)");
-      gGlow.addColorStop(1, "transparent");
-      ctx.fillStyle = gGlow;
-      ctx.beginPath(); ctx.ellipse(x, y, w*1.5, w*0.4, 0, 0, Math.PI*2); ctx.fill();
-    }
-  }
-
-  function drawSilo(x, y, scale) {
-    const sw = 30 * scale, sh = 80 * scale;
-    const bodyG = ctx.createLinearGradient(x - sw/2, 0, x + sw/2, 0);
-    bodyG.addColorStop(0, "#523d2b"); bodyG.addColorStop(0.7, "#96714f"); bodyG.addColorStop(1, "#38271a");
-    ctx.fillStyle = bodyG; ctx.fillRect(x - sw / 2, y - sh, sw, sh);
-    const roofG = ctx.createLinearGradient(x - sw/2, 0, x + sw/2, 0);
-    roofG.addColorStop(0, "#5c2d1c"); roofG.addColorStop(1, "#8a4128");
-    ctx.fillStyle = roofG;
-    ctx.beginPath(); ctx.arc(x, y - sh, sw / 2, Math.PI, 0); ctx.fill();
-    ctx.strokeStyle = "#3b291a"; ctx.lineWidth = 2;
-    for (let i = 1; i < 4; i++) {
-      ctx.beginPath(); ctx.moveTo(x - sw / 2, y - sh + i * sh / 4); ctx.lineTo(x + sw / 2, y - sh + i * sh / 4); ctx.stroke();
-    }
+    drawWindow(x - w*0.35, y - h*0.35);
+    drawWindow(x + w*0.2, y - h*0.35);
+    
+    // Attic window
+    drawWindow(x - w*0.075, y - h - h*0.35);
   }
 
   function drawWindmill(x, y, scale) {
-    const bw = 35 * scale, bh = 110 * scale;
-    const g = ctx.createLinearGradient(x-bw/2, 0, x+bw/2, 0);
-    g.addColorStop(0, "#666"); g.addColorStop(0.7, "#ccc"); g.addColorStop(1, "#444");
-    ctx.fillStyle = g; ctx.fillRect(x - bw / 2, y - bh, bw, bh);
-    ctx.fillStyle = "#702020";
-    ctx.beginPath(); ctx.moveTo(x - bw * 0.6, y - bh); ctx.lineTo(x, y - bh - 40 * scale); ctx.lineTo(x + bw * 0.6, y - bh); ctx.fill();
-    const bladeLen = 75 * scale;
-    ctx.save(); ctx.translate(x, y - bh); ctx.rotate(t * 0.8);
-    ctx.fillStyle = "#e2e2e2";
+    const bw = 50 * scale, bh = 130 * scale;
+    
+    // Shadow
+    ctx.fillStyle = "rgba(80, 50, 20, 0.3)";
+    ctx.beginPath(); ctx.ellipse(x + bw*0.5, y, bw*1.2, bw*0.3, 0, 0, Math.PI*2); ctx.fill();
+
+    // Body (Rustic Wood/Stone)
+    const g = ctx.createLinearGradient(x - bw/2, 0, x + bw/2, 0);
+    g.addColorStop(0, "#7a6b5d"); g.addColorStop(0.3, "#a89b8c"); g.addColorStop(1, "#54463a");
+    ctx.fillStyle = g; 
+    ctx.beginPath(); ctx.moveTo(x - bw*0.6, y); ctx.lineTo(x - bw*0.3, y - bh); ctx.lineTo(x + bw*0.3, y - bh); ctx.lineTo(x + bw*0.6, y); ctx.fill();
+    
+    // Roof
+    ctx.fillStyle = "#8a3b2b";
+    ctx.beginPath(); ctx.moveTo(x - bw*0.4, y - bh); ctx.lineTo(x, y - bh - 40*scale); ctx.lineTo(x + bw*0.4, y - bh); ctx.fill();
+
+    // Blades (Lattice)
+    const bladeLen = 90 * scale;
+    const bladeW = 20 * scale;
+    ctx.save(); ctx.translate(x, y - bh - 10*scale); ctx.rotate(t * 0.5);
+    ctx.fillStyle = "#d1c2a3"; // Canvas sails
+    ctx.strokeStyle = "#4a3320"; ctx.lineWidth = 2; // Wooden frame
+    
     for (let i = 0; i < 4; i++) {
       ctx.save(); ctx.rotate(i * Math.PI / 2);
-      ctx.fillRect(-6*scale, 0, 12*scale, bladeLen);
-      ctx.strokeStyle = "#888"; ctx.strokeRect(-6*scale, 0, 12*scale, bladeLen);
+      // Sail
+      ctx.fillRect(4*scale, 10*scale, bladeW, bladeLen);
+      ctx.strokeRect(4*scale, 10*scale, bladeW, bladeLen);
+      // Lattice lines
+      ctx.beginPath();
+      for(let j=1; j<5; j++) { ctx.moveTo(4*scale, 10*scale + j*18*scale); ctx.lineTo(4*scale + bladeW, 10*scale + j*18*scale); }
+      ctx.stroke();
+      // Main beam
+      ctx.fillStyle = "#4a3320";
+      ctx.fillRect(-2*scale, 0, 4*scale, bladeLen + 15*scale);
       ctx.restore();
     }
+    // Hub
+    ctx.beginPath(); ctx.arc(0, 0, 6*scale, 0, Math.PI*2); ctx.fill();
     ctx.restore();
   }
 
-  function drawField(xCenter, yTop, width, rows, cols, isGlowing) {
-    // Sloped soil for perspective
-    ctx.fillStyle = score < 60 ? "#302114" : "#402d1d";
-    ctx.beginPath();
-    ctx.moveTo(xCenter - width * 0.4, yTop);
-    ctx.lineTo(xCenter + width * 0.4, yTop);
-    ctx.lineTo(xCenter + width * 0.8, yTop + rows * 16);
-    ctx.lineTo(xCenter - width * 0.8, yTop + rows * 16);
-    ctx.fill();
+  function drawDenseWheat(xCenter, yTop, width, rows) {
+    // We draw wheat stalks using thousands of small strokes for a textured look
+    const density = score < 40 ? 0.3 : (score < 80 ? 0.6 : 1.0);
+    const stalkCount = Math.floor(width * rows * density * 0.5);
+    
+    ctx.lineWidth = 2;
+    for(let i=0; i<stalkCount; i++) {
+       const px = xCenter - width*0.5 + pseudoRandom(i)*width;
+       const rowRatio = pseudoRandom(i*2); // 0 to 1
+       const py = yTop + rowRatio * rows * 20;
+       
+       // Wheat colors (golden)
+       const colorBase = ["#e6b822", "#d9a111", "#f2cd41", "#c7860c"];
+       ctx.strokeStyle = colorBase[Math.floor(pseudoRandom(i*3) * colorBase.length)];
+       
+       const height = 15 + pseudoRandom(i*4)*15;
+       const sway = Math.sin(t*2 + px*0.01)*5 + (pseudoRandom(i*5)-0.5)*10;
+       
+       ctx.beginPath();
+       ctx.moveTo(px, py);
+       ctx.quadraticCurveTo(px + sway*0.5, py - height*0.5, px + sway, py - height);
+       ctx.stroke();
+       
+       // Wheat head
+       ctx.fillStyle = ctx.strokeStyle;
+       ctx.beginPath(); ctx.ellipse(px + sway, py - height, 2, 4, sway*0.1, 0, Math.PI*2); ctx.fill();
+    }
+  }
 
-    // Crops
-    for (let r = 0; r < rows; r++) {
-      const rowY = yTop + r * 16 + 10;
-      const rw = width * 0.4 + (width * 0.4 * (r / rows));
-      for (let c = 0; c < cols; c++) {
-        const cx = xCenter - rw + (rw * 2 * c / (cols - 1 || 1));
-        ctx.strokeStyle = isGlowing ? "#7fff9e" : "#2c8a49";
-        ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.moveTo(cx, rowY); ctx.quadraticCurveTo(cx - 3, rowY - 8, cx, rowY - 14); ctx.stroke();
-        const fruitColors = ["#ffd700", "#ff5555", "#ff44aa", "#44eeff"];
-        ctx.fillStyle = fruitColors[(r + c) % fruitColors.length];
-        if (isGlowing) { ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 10; }
-        ctx.beginPath(); ctx.arc(cx, rowY - 16, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0;
-      }
+  // Foreground elements
+  function drawForeground() {
+    // Fence along the bottom
+    if (score >= 40) {
+       ctx.fillStyle = "#523c28";
+       for(let i=0; i<W/50; i++) {
+         const fx = i * 50 + 20;
+         if (fx > W*0.35 && fx < W*0.55) continue; // Gap for path
+         // Post
+         ctx.fillRect(fx, H - 35, 8, 40);
+         // Rails
+         if (i > 0 && !(fx > W*0.35 && fx < W*0.65)) {
+           ctx.fillRect(fx - 50, H - 25, 50, 4);
+           ctx.fillRect(fx - 50, H - 15, 50, 4);
+         }
+       }
+    }
+    
+    // Flowers / Weeds
+    for(let i=0; i<40; i++) {
+       const fx = pseudoRandom(i) * W;
+       const fy = H - pseudoRandom(i*2) * 20;
+       if (fx > W*0.3 && fx < W*0.6) continue; // Path gap
+       ctx.fillStyle = "#3d6621";
+       ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx - 5, fy - 15); ctx.lineTo(fx + 5, fy - 10); ctx.fill();
+       if (score >= 60 && pseudoRandom(i*3) > 0.5) {
+         // Flower head
+         const cols = ["#fff", "#8ab4f8", "#f28b82"];
+         ctx.fillStyle = cols[Math.floor(pseudoRandom(i*4)*3)];
+         ctx.beginPath(); ctx.arc(fx - 5, fy - 15, 3, 0, Math.PI*2); ctx.fill();
+       }
     }
   }
 
   // 5. PHASE RENDERING
   if (score < 20) {
-    drawTree(W * 0.15, horizonY + 10, 0.7);
-    drawTree(W * 0.85, horizonY + 5, 0.6);
-    drawBuilding(W * 0.5, horizonY + 30, 45, 35, false, false);
-    drawField(W * 0.25, horizonY + 40, 50, 2, 4, false);
-  } else if (score < 40) {
-    drawTree(W * 0.12, horizonY + 10, 1.2);
-    drawTree(W * 0.88, horizonY + 5, 1.1);
-    drawBuilding(W * 0.5, horizonY + 30, 75, 60, false, true);
-    drawField(W * 0.2, horizonY + 45, 100, 4, 8, false);
-    drawField(W * 0.8, horizonY + 50, 90, 3, 7, false);
+    drawTree(W * 0.15, horizonY + 20, 0.6);
+    drawTree(W * 0.85, horizonY + 15, 0.5);
+    drawBuilding(W * 0.7, horizonY + 60, 0.5, "poor");
+    drawDenseWheat(W * 0.3, horizonY + 50, 200, 3);
   } else if (score < 60) {
-    drawTree(W * 0.08, horizonY + 15, 1.6);
-    drawTree(W * 0.92, horizonY + 10, 1.5);
-    drawSilo(W * 0.75, horizonY + 25, 0.8);
-    drawBuilding(W * 0.50, horizonY + 35, 110, 85, false, true);
-    drawField(W * 0.15, horizonY + 55, 150, 5, 10, false);
-    drawField(W * 0.85, horizonY + 60, 140, 5, 10, false);
+    drawTree(W * 0.1, horizonY + 20, 0.9);
+    drawTree(W * 0.9, horizonY + 15, 0.8);
+    drawTree(W * 0.25, horizonY + 30, 0.7);
+    drawBuilding(W * 0.7, horizonY + 60, 0.8, "rich");
+    drawDenseWheat(W * 0.2, horizonY + 50, 250, 4);
+    drawDenseWheat(W * 0.85, horizonY + 70, 150, 3);
   } else if (score < 80) {
-    drawTree(W * 0.05, horizonY + 20, 2.0);
-    drawTree(W * 0.95, horizonY + 15, 1.8);
-    drawWindmill(W * 0.18, horizonY + 20, 1.0);
-    drawSilo(W * 0.82, horizonY + 25, 1.0);
-    drawBuilding(W * 0.50, horizonY + 40, 140, 110, false, true);
-    drawField(W * 0.15, horizonY + 65, 180, 7, 12, true);
-    drawField(W * 0.85, horizonY + 70, 170, 6, 11, true);
+    drawTree(W * 0.05, horizonY + 20, 1.2);
+    drawTree(W * 0.95, horizonY + 15, 1.0);
+    drawTree(W * 0.25, horizonY + 30, 0.9);
+    drawWindmill(W * 0.85, horizonY + 40, 0.7);
+    drawBuilding(W * 0.6, horizonY + 70, 1.0, "rich");
+    drawDenseWheat(W * 0.2, horizonY + 60, 300, 5);
+    drawDenseWheat(W * 0.9, horizonY + 80, 200, 4);
   } else {
-    drawTree(W * 0.04, horizonY + 20, 2.4);
-    drawTree(W * 0.96, horizonY + 15, 2.2);
-    drawWindmill(W * 0.15, horizonY + 20, 1.2);
-    drawSilo(W * 0.3, horizonY + 25, 1.2);
-    drawBuilding(W * 0.60, horizonY + 45, 180, 140, true, true);
-    drawField(W * 0.10, horizonY + 75, 220, 8, 14, true);
-    drawField(W * 0.90, horizonY + 80, 200, 8, 14, true);
+    // Legendary Domain (Matches Reference tightly)
+    drawTree(W * 0.05, horizonY + 20, 1.4);
+    drawTree(W * 0.95, horizonY + 15, 1.2);
+    drawTree(W * 0.15, horizonY + 40, 1.0);
+    
+    drawWindmill(W * 0.8, horizonY + 50, 1.0);
+    drawBuilding(W * 0.45, horizonY + 80, 1.3, "rich");
+    
+    // Massive wheat fields wrapping around
+    drawDenseWheat(W * 0.2, horizonY + 60, 400, 6);
+    drawDenseWheat(W * 0.85, horizonY + 70, 300, 5);
+    drawDenseWheat(W * 0.5, horizonY + 120, W, 4); // Foreground crop edges
   }
 
-  // 6. ATMOSPHERIC MAGIC PARTICLES
-  if (score >= 40) {
-    const pCount = score >= 80 ? 60 : 30;
-    for (let i = 0; i < pCount; i++) {
-      const px = W * pseudoRandom(i * 4);
-      const speed = 10 + pseudoRandom(i * 9) * 30;
-      const py = H - ((t * speed + pseudoRandom(i * 13) * H) % (H * 0.8));
-      const pr = 1 + pseudoRandom(i * 5) * 2;
-      ctx.fillStyle = "rgba(255, 230, 150, " + (0.3 + pseudoRandom(i*3)*0.5) + ")";
-      ctx.shadowColor = "#ffdd44"; ctx.shadowBlur = 10;
-      ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
-    }
-    ctx.shadowBlur = 0;
-  }
+  drawForeground();
 }
 
 function generateShareCanvas(canvas, data, langObj) {
@@ -716,11 +708,7 @@ async function fetchBasescan(params) {
 async function resolveAddress(input) {
   const trimmed = input.trim();
   if (/^0x[0-9a-fA-F]{40}$/.test(trimmed)) return trimmed;
-  try {
-    const data = await fetchBasescan({ module: "account", action: "balance", address: trimmed, tag: "latest" });
-    if (data.status === "1") return trimmed; 
-  } catch {}
-  // Returning generic error because UI will translate it.
+  // ENS resolution has been completely removed to focus on raw wallet addresses only
   throw new Error("errorFetch");
 }
 
