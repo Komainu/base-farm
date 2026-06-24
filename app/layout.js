@@ -9,6 +9,9 @@ export const metadata = {
     description: "Visualize your Base activity as a magical spirit and farm.",
     type: "website",
   },
+  other: {
+    "base:app_id": "6a3bef36bef61265c48368b8",
+  },
 };
 
 export default function RootLayout({ children }) {
